@@ -62,8 +62,8 @@ typedef struct {
 
 // ==================== Public API ====================
 
-// Initialize log system with specified buffer size
-void Log_Init(uint16_t buffer_size);
+// Initialize log system
+void Log_Init(void);
 
 // Write a log entry
 void Log_Write(LogModule module, LogLevel level, const char *fmt, ...);

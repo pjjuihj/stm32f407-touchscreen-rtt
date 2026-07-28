@@ -16,8 +16,7 @@ const char *LogLevelNames[5] = {
 // ==================== Static Variables ====================
 static LogBuffer g_logBuffer;
 static LogConfig g_logConfig;
-static char g_cmdBuffer[64];
-static uint8_t g_cmdIndex = 0;
+static uint16_t g_writeCount = 0;
 
 // ==================== Buffer Implementation ====================
 
@@ -42,6 +41,7 @@ bool Buffer_Write(LogBuffer *buf, LogEntry *entry)
     memcpy(&buf->entries[buf->head], entry, sizeof(LogEntry));
     buf->head = (buf->head + 1) % LOG_BUFFER_SIZE;
     buf->count++;
+    g_writeCount++;
     return true;
 }
 
@@ -78,7 +78,7 @@ bool Buffer_IsFull(LogBuffer *buf)
 BufferStats Buffer_GetStats(LogBuffer *buf)
 {
     BufferStats stats;
-    stats.total_writes = buf->count + (buf->overflow ? LOG_BUFFER_SIZE : 0);
+    stats.total_writes = g_writeCount;
     stats.overflow_count = buf->overflow ? 1 : 0;
     stats.current_usage = (buf->count * 100) / LOG_BUFFER_SIZE;
     return stats;
@@ -86,7 +86,7 @@ BufferStats Buffer_GetStats(LogBuffer *buf)
 
 // ==================== Log System API ====================
 
-void Log_Init(uint16_t buffer_size)
+void Log_Init(void)
 {
     Buffer_Init(&g_logBuffer);
 
@@ -96,7 +96,7 @@ void Log_Init(uint16_t buffer_size)
         g_logConfig.level[i] = LOG_LEVEL_INFO;
     }
     g_logConfig.test_mode = false;
-    g_cmdIndex = 0;
+    g_writeCount = 0;
 
     Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Log system initialized");
 }
@@ -156,7 +156,7 @@ void Log_Dump(void)
     USART1_Printf("=== Log Dump (%d entries) ===\r\n", count);
 
     // Read and display all entries
-    LogBuffer tempBuf;
+    static LogBuffer tempBuf;
     Buffer_Init(&tempBuf);
 
     while (Buffer_Read(&g_logBuffer, &entry)) {
