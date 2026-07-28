@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Common;..\Main;..\Startup_config;..\STM32F4xx_HAL_Driver\inc;..\USER\LED;..\USER\LCD;..\USER\BEEP;..\USER\KEY;..\USER\LCD;..\USER\TOUCH</IncludePath>
+              <IncludePath>..\Common;..\Main;..\Startup_config;..\STM32F4xx_HAL_Driver\inc;..\USER\LED;..\USER\LCD;..\USER\BEEP;..\USER\KEY;..\USER\LCD;..\USER\TOUCH;..\USER\USART;..\USER\LOG;..\TEST</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -484,6 +484,21 @@
               <FileType>1</FileType>
               <FilePath>..\USER\TOUCH\xpt2046.c</FilePath>
             </File>
+            <File>
+              <FileName>usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\USART\usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>log.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\LOG\log.c</FilePath>
+            </File>
+            <File>
+              <FileName>test_log.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\TEST\test_log.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -533,6 +548,11 @@
               <FileName>stm32f4xx_hal_dma.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\STM32F4xx_HAL_Driver\src\stm32f4xx_hal_dma.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\STM32F4xx_HAL_Driver\src\stm32f4xx_hal_uart.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_ll_fsmc.c</FileName>

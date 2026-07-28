@@ -1,0 +1,25 @@
+# Build artifacts
+Project/OBJ/
+Project/LIST/
+*.o
+*.d
+*.crf
+*.htm
+*.map
+*.axf
+*.hex
+*.lnp
+*.dep
+
+# IDE files
+*.uvguix.*
+*.uvoptx
+
+# Logs
+*.log
+build.log
+workflow_result.json
+
+# Temporary files
+*.bak
+*.tmp
