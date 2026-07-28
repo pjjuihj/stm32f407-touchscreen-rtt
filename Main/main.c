@@ -3,42 +3,95 @@
 #include "key.h"
 #include "lcd.h"
 #include "touch.h"
+#include "usart.h"
+#include "log.h"
+#include "test_log.h"
+
+// External USART1 handle (defined in usart.c)
+extern UART_HandleTypeDef huart1;
+
+// Command receive buffer
+static char rxBuffer[64];
+static uint8_t rxIndex = 0;
+
+// Process received character
+void ProcessRxChar(uint8_t ch)
+{
+    if (ch == '\r' || ch == '\n') {
+        if (rxIndex > 0) {
+            rxBuffer[rxIndex] = '\0';
+            Log_ProcessCommand(rxBuffer);
+            rxIndex = 0;
+        }
+    } else if (rxIndex < sizeof(rxBuffer) - 1) {
+        rxBuffer[rxIndex++] = ch;
+    }
+}
+
+// USART1 IRQ handler
+void USART1_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart1);
+}
+
+// UART receive callback
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1) {
+        ProcessRxChar(huart->pRxBuffPtr[0]);
+        // Re-enable receive interrupt
+        HAL_UART_Receive_IT(&huart1, huart->pRxBuffPtr, 1);
+    }
+}
 
 /*********************************************************************************
-*********************ÆôÃ÷ÐÀÐÀ STM32F407Ó¦ÓÃ¿ª·¢°å(¸ßÅä°æ)*************************
+*********************ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ STM32F407Ó¦ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½)*************************
 **********************************************************************************
-* ÎÄ¼þÃû³Æ: Àý³Ì3 °´¼üÊ¹ÓÃÖ÷º¯Êýmain()                                           *
-* ÎÄ¼þ¼òÊö£º°´¼üÊµÑé                                                             *
-* ´´½¨ÈÕÆÚ£º2017.08.30                                                           *
-* °æ    ±¾£ºV1.0                                                                 *
-* ×÷    Õß£ºClever                                                               *
-* Ëµ    Ã÷£º°´¼ü¿ØÖÆLEDÁÁÃðÓë·äÃùÆ÷¿ª¶Ï                                          *
-* ÌÔ±¦µêÆÌ£ºhttps://shop125046348.taobao.com                                     *
-* Éù    Ã÷£º±¾Àý³Ì´úÂë½öÓÃÓÚÑ§Ï°²Î¿¼                                             *
+* ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½3 ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½main()                                           *
+* ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½                                                             *
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½2017.08.30                                                           *
+* ï¿½ï¿½    ï¿½ï¿½ï¿½ï¿½V1.0                                                                 *
+* ï¿½ï¿½    ï¿½ß£ï¿½Clever                                                               *
+* Ëµ    ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½LEDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                                          *
+* ï¿½Ô±ï¿½ï¿½ï¿½ï¿½Ì£ï¿½https://shop125046348.taobao.com                                     *
+* ï¿½ï¿½    ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ§Ï°ï¿½Î¿ï¿½                                             *
 **********************************************************************************
 *********************************************************************************/
 
 int main(void)
-{ 
-  HAL_Init();                    	//³õÊ¼»¯HAL¿â    
-  Stm32_Clock_Init(336,8,2,7);  	//ÉèÖÃÊ±ÖÓ,168Mhz
-	delay_init();     //ÑÓÊ±º¯Êý³õÊ¼»¯
-	LED_Init();				//LED³õÊ¼»¯
-	BEEP_Init();      //·äÃùÆ÷³õÊ¼»¯
-	KEY_Init();       //°´¼ü³õÊ¼»¯
- 	LCD_Init();           //³õÊ¼»¯LCD FSMC½Ó¿ÚºÍÏÔÊ¾Çý¶¯
-	Touch_Init();				//´¥ÃþÆÁ³õÊ¼»¯
- 	BRUSH_COLOR=RED;    //ÉèÖÃ×ÖÌåÎªºìÉ« 
-	LCD_DisplayString(10,10,16,"Illuminati STM32");	
+{
+  HAL_Init();                    	//ï¿½ï¿½Ê¼ï¿½ï¿½HALï¿½ï¿½
+  Stm32_Clock_Init(336,8,2,7);  	//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½,168Mhz
+	delay_init();     //ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	LED_Init();				//LEDï¿½ï¿½Ê¼ï¿½ï¿½
+	BEEP_Init();      //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	KEY_Init();       //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+ 	LCD_Init();           //ï¿½ï¿½Ê¼ï¿½ï¿½LCD FSMCï¿½Ó¿Úºï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
+	Touch_Init();				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+
+	// Initialize USART and Log system
+	USART1_Init();
+	Log_Init();
+
+	// Enable USART1 NVIC and start receive interrupt
+	HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(USART1_IRQn);
+	uint8_t rxChar;
+	HAL_UART_Receive_IT(&huart1, &rxChar, 1);
+
+ 	BRUSH_COLOR=RED;    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½É«
+	LCD_DisplayString(10,10,16,"Illuminati STM32");
   LCD_DisplayString(20,40,24,"Author:Clever");
 	LCD_DisplayString(30,80,24,"19.TOUCH TEST");
 
+	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "System started");
+
 	delay_ms(1000);
-	
- 	Clear_Screen();	       //ÏÈÇåÆÁ 	
+
+ 	Clear_Screen();	       //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   if(lcd_id==0x9341)
-	   R_Touch_test();     //µç×èÆÁ»­°å²âÊÔ²âÊÔ
+	   R_Touch_test();     //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô²ï¿½ï¿½ï¿½
 	else if(lcd_id==0x1963)
-	   C_Touch_test(); 		 //µçÈÝÆÁ»­°å²âÊÔ²âÊÔ		
+	   C_Touch_test(); 		 //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô²ï¿½ï¿½ï¿½
 }
 
