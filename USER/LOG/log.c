@@ -13,9 +13,9 @@ const char *LogLevelNames[5] = {
     "", "ERROR", "WARNING", "INFO", "DEBUG"
 };
 
-// ==================== Static Variables ====================
-static LogBuffer g_logBuffer;
-static LogConfig g_logConfig;
+// ==================== Global Variables (exposed for testing) ====================
+LogBuffer g_logBuffer;
+LogConfig g_logConfig;
 static uint16_t g_writeCount = 0;
 
 // ==================== Buffer Implementation ====================

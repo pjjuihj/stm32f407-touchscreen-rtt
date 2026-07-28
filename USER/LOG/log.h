@@ -60,6 +60,10 @@ typedef struct {
     bool test_mode;                   // Test mode flag
 } LogConfig;
 
+// ==================== Internal State (exposed for testing) ====================
+extern LogBuffer g_logBuffer;
+extern LogConfig g_logConfig;
+
 // ==================== Public API ====================
 
 // Initialize log system
