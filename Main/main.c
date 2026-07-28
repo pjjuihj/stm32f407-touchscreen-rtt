@@ -76,7 +76,7 @@ int main(void)
 	// Enable USART1 NVIC and start receive interrupt
 	HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(USART1_IRQn);
-	uint8_t rxChar;
+	static uint8_t rxChar;
 	HAL_UART_Receive_IT(&huart1, &rxChar, 1);
 
  	BRUSH_COLOR=RED;    //��������Ϊ��ɫ
