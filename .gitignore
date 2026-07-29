@@ -1,4 +1,5 @@
-# Build artifacts
+# ==================== Build Artifacts ====================
+# Keil
 Project/OBJ/
 Project/LIST/
 *.o
@@ -11,61 +12,44 @@ Project/LIST/
 *.lnp
 *.dep
 
-# IDE files
+# CMake
+cmake-build-*/
+
+# PlatformIO
+.pio/
+
+# ==================== IDE Files ====================
+# Keil
 *.uvguix.*
 *.uvoptx
+*.UVoptx
+*.uvguix
+
+# VSCode
 .vscode/
-.codegraph/
-.pio/
+
+# Eclipse/STM32CubeIDE
 .settings/
-cmake_build/
-platformio.ini
+.cproject
+.project
 
-# Logs
-*.log
-build.log
-workflow_result.json
-test_report.txt
-
-# Temporary files
-*.bak
-*.tmp
-*.zip
-
-# Python files
-__pycache__/
-*.pyc
-
-# Documentation build
-docs/debug-logs/
-
-# Node modules
-node_modules/
-package-lock.json
-
-# LVGL unnecessary files
+# ==================== Third-party Libraries ====================
+# LVGL (managed as submodule or manual copy)
 LVGL/.devcontainer/
 LVGL/.github/
-LVGL/configs/
-LVGL/demos/
-LVGL/docs/
-LVGL/env_support/
-LVGL/examples/
-LVGL/libs/
-LVGL/scripts/
-LVGL/tests/
-LVGL/zephyr/
-LVGL/.gitignore
 LVGL/.pre-commit-config.yaml
 LVGL/.typos.toml
-LVGL/CMakeLists.txt
-LVGL/CMakePresets.json
 LVGL/COPYRIGHTS.md
 LVGL/Kconfig
 LVGL/LICENCE.txt
 LVGL/README.md
 LVGL/SConscript
 LVGL/component.mk
+LVGL/configs/
+LVGL/demos/
+LVGL/docs/
+LVGL/env_support/
+LVGL/examples/
 LVGL/idf_component.yml
 LVGL/library.json
 LVGL/library.properties
@@ -73,3 +57,27 @@ LVGL/lv_conf_template.h
 LVGL/lvgl.mk
 LVGL/lvgl.pc.in
 LVGL/lvgl_private.h
+LVGL/scripts/
+LVGL/tests/
+LVGL/zephyr/
+
+# ==================== Temporary & Generated ====================
+*.bak
+*.tmp
+*.log
+debug-loop.json
+test_report.txt
+diag_usart.py
+listen_test.py
+test_lvgl.py
+test_serial_log.py
+add_lvgl_files.py
+add_missing_files.py
+
+# Node.js
+node_modules/
+
+# ==================== OS Files ====================
+Thumbs.db
+Desktop.ini
+.DS_Store

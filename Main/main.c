@@ -175,6 +175,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  **********************************************************************************
  *********************************************************************************/
 
+/* 按钮点击事件回调 - LED闪烁 */
+static void btn_event_cb(lv_event_t *e)
+{
+	LED0 = 0;   /* 亮 */
+	delay_ms(100);
+	LED0 = 1;   /* 灭 */
+}
+
 int main(void)
 {
   HAL_Init();                    	//��ʼ��HAL��
@@ -211,8 +219,52 @@ int main(void)
 	gui_touch_init();
 	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LVGL initialized");
 
-	/* 使用ui_init()创建UI */
-	ui_init();
+	/* 设置屏幕背景色 */
+	lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFFFFFF), 0);
+	lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, 0);
+
+	/* 创建标题标签 */
+	lv_obj_t *title = lv_label_create(lv_screen_active());
+	if(title != NULL)
+	{
+		lv_label_set_text(title, "LVGL Image Demo");
+		lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+		lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+	}
+
+	/* 创建带图标的按钮1 - 使用LVGL符号 */
+	lv_obj_t *btn1 = lv_button_create(lv_screen_active());
+	if(btn1 != NULL)
+	{
+		lv_obj_set_size(btn1, 120, 50);
+		lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
+		lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, NULL);
+
+		lv_obj_t *label1 = lv_label_create(btn1);
+		if(label1 != NULL)
+		{
+			/* LV_SYMBOL_HOME 是LVGL内置的主页图标 */
+			lv_label_set_text(label1, LV_SYMBOL_HOME " Home");
+			lv_obj_center(label1);
+		}
+	}
+
+	/* 创建带图标的按钮2 - 使用LVGL符号 */
+	lv_obj_t *btn2 = lv_button_create(lv_screen_active());
+	if(btn2 != NULL)
+	{
+		lv_obj_set_size(btn2, 120, 50);
+		lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
+		lv_obj_add_event_cb(btn2, btn_event_cb, LV_EVENT_CLICKED, NULL);
+
+		lv_obj_t *label2 = lv_label_create(btn2);
+		if(label2 != NULL)
+		{
+			/* LV_SYMBOL_SETTINGS 是LVGL内置的设置图标 */
+			lv_label_set_text(label2, LV_SYMBOL_SETTINGS " Settings");
+			lv_obj_center(label2);
+		}
+	}
 
 	/* 强制刷新整个屏幕 */
 	lv_refr_now(NULL);
