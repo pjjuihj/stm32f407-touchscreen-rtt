@@ -1,4 +1,8 @@
 #include "ui.h"
+#include "gui_fonts.h"
+
+/* 中文字体声明 */
+LV_FONT_DECLARE(font_cn_16);
 
 /**
  * @brief 按钮点击事件回调
@@ -27,13 +31,22 @@ void ui_init(void)
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
-    /* 创建标题标签 */
+    /* 创建标题标签 - 中文 */
     lv_obj_t *title = lv_label_create(scr);
     if(title != NULL)
     {
-        lv_label_set_text(title, "LVGL Image Demo");
-        lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+        lv_label_set_text(title, "LVGL字体演示");
+        lv_obj_set_style_text_font(title, &font_cn_16, 0);
         lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+    }
+
+    /* 创建说明标签 - 中文 */
+    lv_obj_t *info = lv_label_create(scr);
+    if(info != NULL)
+    {
+        lv_label_set_text(info, "中文: 你好世界!");
+        lv_obj_set_style_text_font(info, &font_cn_16, 0);
+        lv_obj_align(info, LV_ALIGN_TOP_MID, 0, 35);
     }
 
     /* 创建带图标的按钮1 - Home */
