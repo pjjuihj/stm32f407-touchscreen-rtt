@@ -1,7 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
-project(lvgl_pc_sim C)
+cmake_minimum_required(VERSION 3.12.4)
+project(lvgl_pc_sim C CXX)
 
 set(CMAKE_C_STANDARD 11)
+
+# 禁用不需要的 LVGL 功能（必须在 add_subdirectory 之前设置）
+set(LV_BUILD_CONF_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../lv_conf.h" CACHE PATH "" FORCE)
+set(CONFIG_LV_BUILD_DEMOS OFF CACHE BOOL "" FORCE)
+set(CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 # 查找 SDL2（Windows 上使用 find_package 或手动指定路径）
 # 可以通过 -DSDL2_DIR=... 指定 SDL2 安装路径
@@ -19,10 +24,14 @@ endif()
 set(LVGL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../LVGL)
 add_subdirectory(${LVGL_DIR} ${CMAKE_BINARY_DIR}/lvgl)
 
-# 禁用不需要的 LVGL 功能
-set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../lv_conf.h CACHE STRING "" FORCE)
-set(LV_USE_DEMOWidgets OFF CACHE BOOL "" FORCE)
-set(LV_USE_DEMOBENCHMARKS OFF CACHE BOOL "" FORCE)
+# 移除 ARM 专用的 Helium 汇编文件（PC 平台不支持）
+get_target_property(LVGL_SOURCES lvgl SOURCES)
+foreach(SRC ${LVGL_SOURCES})
+    if(SRC MATCHES "helium.*\\.S$")
+        list(REMOVE_ITEM LVGL_SOURCES "${SRC}")
+    endif()
+endforeach()
+set_target_properties(lvgl PROPERTIES SOURCES "${LVGL_SOURCES}")
 
 # PC 模拟源文件
 add_executable(lvgl_pc_sim
@@ -40,7 +49,6 @@ target_include_directories(lvgl_pc_sim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../LVGL
     ${CMAKE_CURRENT_SOURCE_DIR}/../
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui
-    ${SDL2_INCLUDE_DIRS}
 )
 
 # 链接库
