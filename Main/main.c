@@ -6,6 +6,11 @@
 #include "usart.h"
 #include "log.h"
 #include "test_log.h"
+#include "gui_driver.h"     /* 新增: LVGL驱动接口 */
+#include "gui_fonts.h"      /* 新增: 字体管理接口 */
+#include "lvgl.h"           /* 新增: LVGL头文件 */
+#include "ui.h"             /* 新增: 共享UI接口 */
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -170,8 +175,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 * ˵    ������������LED���������������                                          *
 * �Ա����̣�https://shop125046348.taobao.com                                     *
 * ��    ���������̴��������ѧϰ�ο�                                             *
-**********************************************************************************
-*********************************************************************************/
+ **********************************************************************************
+ *********************************************************************************/
 
 int main(void)
 {
@@ -187,38 +192,38 @@ int main(void)
 	delay_ms(100);  // Wait for USART to be ready
 
 	// Enable USART1 receive interrupt
-	HAL_StatusTypeDef status = HAL_UART_Receive_IT(&huart1, &rxChar, 1);
+	HAL_UART_Receive_IT(&huart1, &rxChar, 1);
 
 	// Initialize log system AFTER USART is ready
 	Log_Init();
 	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "System starting...");
 
- 	LCD_Init();           //��ʼ��LCD FSMC�ӿں���ʾ����
+	/* 初始化LCD */
+	LCD_Init();
 	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LCD initialized");
 
-	Touch_Init();				//��������ʼ��
+	/* 初始化触摸 */
+	Touch_Init();
 	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Touch initialized");
 
- 	BRUSH_COLOR=RED;    //��������Ϊ��ɫ 
-	LCD_DisplayString(10,10,16,"Illuminati STM32");	
-  LCD_DisplayString(20,40,24,"Author:Clever");
-	LCD_DisplayString(30,80,24,"19.TOUCH TEST");
+	/* LVGL初始化 */
+	lv_init();
+	gui_log_init();
+	gui_tick_init();
+	gui_disp_init();
+	gui_touch_init();
+	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LVGL initialized");
 
-	delay_ms(1000);
-	
- 	Clear_Screen();	       //������
-  if(lcd_id==0x9341)
-	   R_Touch_test();     //������������Բ���
-	else if(lcd_id==0x1963)
-	   C_Touch_test(); 		 //������������Բ���
+	/* 使用共享UI代码（替换原来的UI创建代码） */
+	ui_init();
 
-	// Debug loop
+	/* 强制刷新整个屏幕 */
+	lv_refr_now(NULL);
+
+	/* 主循环 */
 	while(1) {
-		if (rxInterruptCalled) {
-			USART1_SendString("Interrupt OK\r\n");
-			rxInterruptCalled = 0;
-		}
-		delay_ms(100);
+		lv_task_handler();
+		delay_ms(5);
 	}
 }
 
