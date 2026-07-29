@@ -84,12 +84,13 @@ void Log_Enable(LogModule module, bool enable)
     }
 }
 
-// Dump all logs
+// Dump all logs (limited to 20 entries max)
 void Log_Dump(void)
 {
     USART1_SendString("=== Log Dump ===\r\n");
     uint16_t idx = g_logBuffer.tail;
-    for (int i = 0; i < g_logBuffer.count; i++) {
+    uint16_t count = g_logBuffer.count > 20 ? 20 : g_logBuffer.count;
+    for (int i = 0; i < count; i++) {
         LogEntry *e = &g_logBuffer.entries[idx];
         char buf[128];
         snprintf(buf, sizeof(buf), "[%s][%09lums][%s] %s\r\n",
@@ -99,6 +100,9 @@ void Log_Dump(void)
                  e->message);
         USART1_SendString(buf);
         idx = (idx + 1) % LOG_BUFFER_SIZE;
+    }
+    if (g_logBuffer.count > 20) {
+        USART1_SendString("... (showing last 20 entries)\r\n");
     }
     USART1_SendString("=== End ===\r\n");
 }

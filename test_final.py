@@ -14,12 +14,12 @@ try:
     ser.reset_input_buffer()
     time.sleep(1)
 
-    def send_cmd(cmd):
+    def send_cmd(cmd, wait=0.5):
         for ch in cmd:
             ser.write(ch.encode())
             time.sleep(0.02)
         ser.write(b'\r\n')
-        time.sleep(0.5)
+        time.sleep(wait)
         return ser.read(ser.in_waiting or 1024).decode('utf-8', errors='ignore')
 
     # Test all commands
@@ -48,7 +48,11 @@ try:
     failed = 0
 
     for cmd, expected in tests:
-        resp = send_cmd(cmd)
+        # Use longer wait for TEST RUN and DUMP
+        if cmd in ['TEST RUN', 'DUMP']:
+            resp = send_cmd(cmd, wait=5)
+        else:
+            resp = send_cmd(cmd)
         if expected in resp:
             print(f'[PASS] {cmd}')
             passed += 1

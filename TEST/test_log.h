@@ -23,4 +23,10 @@ TestResult Test_Buffer_Write(void);
 TestResult Test_Buffer_Overflow(void);
 TestResult Test_Timestamp(void);
 
+// Additional tests
+TestResult Test_Log_Level_Filter(void);
+TestResult Test_Log_Module_Disabled(void);
+TestResult Test_Log_Message_Format(void);
+TestResult Test_Buffer_Count(void);
+
 #endif
