@@ -7,10 +7,7 @@
 #include "log.h"
 #include "test_log.h"
 #include "gui_driver.h"     /* 新增: LVGL驱动接口 */
-#include "gui_fonts.h"      /* 新增: 字体管理接口 */
 #include "lvgl.h"           /* 新增: LVGL头文件 */
-#include "ui.h"             /* 新增: 共享UI接口 */
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -214,7 +211,7 @@ int main(void)
 	gui_touch_init();
 	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LVGL initialized");
 
-	/* 使用共享UI代码（替换原来的UI创建代码） */
+	/* 使用ui_init()创建UI */
 	ui_init();
 
 	/* 强制刷新整个屏幕 */

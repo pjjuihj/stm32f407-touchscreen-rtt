@@ -410,6 +410,10 @@ void ui_settings_create(void);
 | `GUI/gui_fonts.c` | 新增 | 字体管理实现 |
 | `GUI/gui_images.h` | 新增 | 图片管理接口 |
 | `GUI/gui_images.c` | 新增 | 图片管理实现 |
+| `GUI/gui_log.h` | 新增 | 日志功能接口 |
+| `GUI/gui_log.c` | 新增 | 日志功能实现 |
+| `GUI/gui_stability.h` | 新增 | 稳定性监控接口 |
+| `GUI/gui_stability.c` | 新增 | 稳定性监控实现 |
 | `UI/ui_main.h` | 新增 | 主界面接口 |
 | `UI/ui_main.c` | 新增 | 主界面实现 |
 | `UI/ui_data.h` | 新增 | 数据界面接口 |
@@ -601,6 +605,100 @@ int main(void)
 #define LV_DEF_DRAW_BUF_SIZE   2400  /* 240*10 */
 ```
 
+### 6.3 日志配置
+
+```c
+/*===========================================================================
+ * 日志配置
+ *===========================================================================*/
+
+/**
+ * @brief 启用日志输出
+ *        0: 禁用 (节省代码空间)
+ *        1: 启用 (调试时推荐)
+ */
+#define LV_USE_LOG             1
+
+#if LV_USE_LOG
+    /**
+     * @brief 日志级别
+     *        LV_LOG_LEVEL_TRACE: 最详细 (0)
+     *        LV_LOG_LEVEL_INFO:  信息 (1)
+     *        LV_LOG_LEVEL_WARN:  警告 (2)
+     *        LV_LOG_LEVEL_ERROR: 错误 (3)
+     *        LV_LOG_LEVEL_USER:  用户自定义 (4)
+     *        LV_LOG_LEVEL_NONE:  禁用 (5)
+     */
+    #define LV_LOG_LEVEL        LV_LOG_LEVEL_TRACE
+
+    /**
+     * @brief 日志打印函数
+     *        0: 使用LVGL内置打印
+     *        1: 使用printf
+     */
+    #define LV_LOG_PRINTF       1
+
+    /**
+     * @brief 启用各模块日志
+     */
+    #define LV_LOG_TRACE_MEM        1   /* 内存分配 */
+    #define LV_LOG_TRACE_TIMER      1   /* 定时器 */
+    #define LV_LOG_TRACE_INDEV      1   /* 输入设备 */
+    #define LV_LOG_TRACE_REFR       1   /* 刷新 */
+    #define LV_LOG_TRACE_EVENT      1   /* 事件 */
+    #define LV_LOG_TRACE_OBJ_CREATE 1   /* 对象创建 */
+    #define LV_LOG_TRACE_LAYOUT     1   /* 布局 */
+    #define LV_LOG_TRACE_ANIM       1   /* 动画 */
+#endif
+```
+
+### 6.4 稳定性监控配置
+
+```c
+/*===========================================================================
+ * 稳定性监控配置
+ *===========================================================================*/
+
+/**
+ * @brief 启用栈溢出检测
+ *        0: 禁用
+ *        1: 启用
+ */
+#define GUI_USE_STACK_OVERFLOW_CHECK  1
+
+/**
+ * @brief 启用内存泄漏检测
+ *        0: 禁用
+ *        1: 启用
+ */
+#define GUI_USE_MEMORY_LEAK_CHECK    1
+
+/**
+ * @brief 栈溢出检测阈值 (字节)
+ */
+#define GUI_STACK_OVERFLOW_THRESHOLD  256
+
+/**
+ * @brief 内存使用警告阈值 (百分比)
+ */
+#define GUI_MEMORY_WARNING_THRESHOLD  0.8f
+
+/**
+ * @brief 内存使用危险阈值 (百分比)
+ */
+#define GUI_MEMORY_CRITICAL_THRESHOLD 0.9f
+
+/**
+ * @brief 栈溢出检测周期 (ms)
+ */
+#define GUI_STACK_CHECK_PERIOD       100
+
+/**
+ * @brief 内存检测周期 (ms)
+ */
+#define GUI_MEMORY_CHECK_PERIOD      1000
+```
+
 ## 7. Keil工程配置
 
 ### 7.1 预处理宏
@@ -700,6 +798,12 @@ TOUCH (Target 1)
 | FSMC时序问题 | LCD显示花屏 | 调整时序参数 |
 | 触摸精度问题 | 触摸不准确 | 重新校准 |
 | 内存不足 | 系统崩溃 | 优化内存使用 |
+| 内存泄漏 | 系统不稳定 | 添加内存泄漏检测 |
+| 栈溢出 | 系统崩溃 | 添加栈溢出检测 |
+| 空指针访问 | HardFault | 检查所有指针 |
+| 数组越界 | 内存损坏 | 检查数组边界 |
+| 中断冲突 | 系统卡死 | 使用临界区保护 |
+| FSMC时序错误 | 死机 | 使用保守时序 |
 
 ### 9.2 注意事项
 
@@ -707,6 +811,195 @@ TOUCH (Target 1)
 2. **RAM使用** - 显示缓冲占用约10KB，需监控堆栈使用
 3. **触摸精度** - 电阻触摸屏精度有限，可能需要校准
 4. **动画性能** - 高级动画需要足够的CPU和RAM资源
+
+### 9.3 死机预防措施
+
+**9.3.1 内存安全**
+
+```c
+/* 1. 检查内存分配 */
+lv_obj_t *obj = lv_obj_create(parent);
+if(obj == NULL) {
+    printf("ERROR: Memory allocation failed!\n");
+    return NULL;
+}
+
+/* 2. 监控内存使用 */
+lv_mem_monitor_t mon;
+lv_mem_monitor(&mon);
+if(mon.used_pct > 80) {
+    printf("WARNING: Memory usage high: %d%%\n", mon.used_pct);
+}
+
+/* 3. 使用内存池 */
+static LV_MEM_DEFINE(my_mem, 48 * 1024);  /* 48KB内存池 */
+```
+
+**9.3.2 栈安全**
+
+```c
+/* 1. 增加栈大小 */
+// Keil: Options → Linker → Stack Size = 0x1000 (4KB)
+
+/* 2. 栈溢出检测 */
+uint32_t get_stack_usage(void) {
+    uint32_t sp;
+    __asm volatile ("MRS %0, MSP" : "=r" (sp));
+    extern uint32_t __initial_sp;
+    return (uint32_t)&__initial_sp - sp;
+}
+
+/* 3. 避免大栈变量 */
+/* 错误: uint8_t buffer[2048]; */
+/* 正确: static uint8_t buffer[2048]; */
+```
+
+**9.3.3 指针安全**
+
+```c
+/* 1. 检查指针 */
+void safe_function(void *ptr) {
+    if(ptr == NULL) {
+        printf("ERROR: NULL pointer!\n");
+        return;
+    }
+    /* 使用ptr */
+}
+
+/* 2. 使用LVGL断言 */
+LV_ASSERT_NULL(ptr);
+LV_ASSERT(obj != NULL);
+```
+
+**9.3.4 中断安全**
+
+```c
+/* 1. 中断中只设置标志 */
+volatile uint8_t flag = 0;
+
+void EXTI0_IRQHandler(void) {
+    flag = 1;  /* 只设置标志 */
+}
+
+void main_loop(void) {
+    if(flag) {
+        __disable_irq();
+        flag = 0;
+        __enable_irq();
+        /* 处理事件 */
+    }
+}
+
+/* 2. 使用临界区 */
+void critical_section(void) {
+    __disable_irq();
+    /* 访问共享资源 */
+    __enable_irq();
+}
+```
+
+**9.3.5 时序安全**
+
+```c
+/* 1. 使用保守时序 */
+void FSMC_Config_Safe(void) {
+    /* 地址建立时间: 15个HCLK */
+    /* 数据建立时间: 60个HCLK */
+}
+
+/* 2. 避免回调中延时 */
+/* 错误: delay_ms(10); */
+/* 正确: 不延时，立即返回 */
+```
+
+### 9.4 死机调试方法
+
+**9.4.1 硬件调试**
+
+```c
+/* 1. LED指示 */
+void error_handler(void) {
+    LED0 = 0;  /* 点亮LED */
+    while(1);  /* 停止 */
+}
+
+/* 2. 串口输出 */
+void error_printf(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+}
+```
+
+**9.4.2 软件调试**
+
+```c
+/* 1. 断点调试 */
+// 在HardFault_Handler中设置断点
+
+/* 2. 堆栈回溯 */
+// 使用Keil的堆栈回溯功能
+
+/* 3. 内存查看 */
+// 使用Keil的内存查看器
+```
+
+**9.4.3 日志调试**
+
+```c
+/* 1. 启用LVGL日志 */
+#define LV_USE_LOG  1
+#define LV_LOG_LEVEL  LV_LOG_LEVEL_TRACE
+
+/* 2. 自定义日志 */
+void my_log(const char *fmt, ...) {
+    printf("[LOG] %s\n", fmt);
+}
+```
+
+### 9.5 死机预防检查清单
+
+| 检查项 | 状态 | 说明 |
+|--------|------|------|
+| ✅ | 内存分配检查 | 检查所有lv_obj_create返回值 |
+| ✅ | 栈溢出检测 | 增加栈大小，监控栈使用 |
+| ✅ | 空指针检查 | 检查所有指针 |
+| ✅ | 数组边界检查 | 检查数组索引 |
+| ✅ | 中断安全 | 中断中只设置标志 |
+| ✅ | 时序安全 | 使用保守时序 |
+| ✅ | 回调安全 | 回调中不延时 |
+
+### 9.6 关键代码模板
+
+```c
+/* 1. 安全对象创建 */
+lv_obj_t* safe_lv_obj_create(lv_obj_t *parent) {
+    lv_obj_t *obj = lv_obj_create(parent);
+    if(obj == NULL) {
+        printf("ERROR: Object creation failed!\n");
+        return NULL;
+    }
+    return obj;
+}
+
+/* 2. 安全内存监控 */
+void safe_memory_monitor(void) {
+    lv_mem_monitor_t mon;
+    lv_mem_monitor(&mon);
+    if(mon.used_pct > 80) {
+        printf("WARNING: Memory usage high: %d%%\n", mon.used_pct);
+    }
+}
+
+/* 3. 安全栈监控 */
+void safe_stack_monitor(void) {
+    uint32_t usage = get_stack_usage();
+    if(usage > 768) {
+        printf("WARNING: Stack usage high: %lu bytes\n", usage);
+    }
+}
+```
 
 ## 10. 附录
 

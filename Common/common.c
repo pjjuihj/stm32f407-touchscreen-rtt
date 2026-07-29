@@ -1,24 +1,24 @@
 #include "common.h"
 
 /*********************************************************************************
-************************ÆôÃ÷ÐÀÐÀ STM32F407ºËÐÄ¿ª·¢°å******************************
+************************ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ STM32F407ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½******************************
 **********************************************************************************
-* ÎÄ¼þÃû³Æ: common.c                                                             *
-* ÎÄ¼þ¼òÊö£º¸÷¸ö¹¤³ÌËùÐèµ÷ÓÃµÄ¹«¹²ÎÄ¼þ                                           *
-* ´´½¨ÈÕÆÚ£º2015.03.03                                                           *
-* °æ    ±¾£ºV1.0                                                                 *
-* ×÷    Õß£ºClever                                                               *
-* Ëµ    Ã÷£º°üº­Êý¾ÝÀàÐÍ¶¨Òå¡¢IO¿ÚÎ»¶¨Òå¡¢Î»¶Î¶¨ÒåÓëÑÓÊ±º¯Êý¶¨Òå                 * 
+* ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½: common.c                                                             *
+* ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÃµÄ¹ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½                                           *
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½2015.03.03                                                           *
+* ï¿½ï¿½    ï¿½ï¿½ï¿½ï¿½V1.0                                                                 *
+* ï¿½ï¿½    ï¿½ß£ï¿½Clever                                                               *
+* Ëµ    ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½ï¿½å¡¢IOï¿½ï¿½Î»ï¿½ï¿½ï¿½å¡¢Î»ï¿½Î¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                 * 
 **********************************************************************************
 *********************************************************************************/	  
 
 /****************************************************************************
-* Ãû    ³Æ: void GPIO_group_OUT(_gpio_group *group,u16 outdata)
-* ¹¦    ÄÜ£ºÊ¹ÓÃËæÒâ16¸öIO¿Ú×é³ÉÒ»¸ö16Î»²¢ÐÐÊä³ö¿Ú
-* Èë¿Ú²ÎÊý£º*group£º ÈÎÒâ16¸öIO¿ÚÎªÔªËØµÄ½á¹¹ÌåÖ¸Õë
-            outdata: 16Î»Êä³öÊýÖµ
-* ·µ»Ø²ÎÊý£ºÎÞ
-* Ëµ    Ã÷£ºoutdata´Ó¸ßÎ»¿ªÊ¼¸³Öµ
+* ï¿½ï¿½    ï¿½ï¿½: void GPIO_group_OUT(_gpio_group *group,u16 outdata)
+* ï¿½ï¿½    ï¿½Ü£ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½16ï¿½ï¿½IOï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½16Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½*groupï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½16ï¿½ï¿½IOï¿½ï¿½ÎªÔªï¿½ØµÄ½á¹¹ï¿½ï¿½Ö¸ï¿½ï¿½
+            outdata: 16Î»ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
+* ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµ    ï¿½ï¿½ï¿½ï¿½outdataï¿½Ó¸ï¿½Î»ï¿½ï¿½Ê¼ï¿½ï¿½Öµ
 ****************************************************************************/
 void GPIO_group_OUT(_gpio_group *group,u16 outdata)
 {
@@ -74,13 +74,13 @@ void GPIO_group_OUT(_gpio_group *group,u16 outdata)
 }
 
 /****************************************************************************
-* Ãû    ³Æ: void GPIO_bits_OUT(GPIO_TypeDef* GPIOx, u8 start_bit, u8 bit_size,u16 outdata)
-* ¹¦    ÄÜ£ºÎ»¶Î²Ù×÷ÊµÏÖ£¬Í¬Ò»IO¿ÚµÄ¼¸Î»²¢ÐÐÊä³ö²Ù×÷
-* Èë¿Ú²ÎÊý£º* GPIOx£º  ¶ÔÓ¦µÄIO¿Ú
-*           start_bit: ²¢ÐÐÊä³öµÄÆðÊ¼Î»
-*           bit_size:  Òª²¢ÐÐÊä³öµÄÎ»Êý
-* ·µ»Ø²ÎÊý£ºÎÞ
-* Ëµ    Ã÷£ºstart_bit: 0~14
+* ï¿½ï¿½    ï¿½ï¿½: void GPIO_bits_OUT(GPIO_TypeDef* GPIOx, u8 start_bit, u8 bit_size,u16 outdata)
+* ï¿½ï¿½    ï¿½Ü£ï¿½Î»ï¿½Î²ï¿½ï¿½ï¿½Êµï¿½Ö£ï¿½Í¬Ò»IOï¿½ÚµÄ¼ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½* GPIOxï¿½ï¿½  ï¿½ï¿½Ó¦ï¿½ï¿½IOï¿½ï¿½
+*           start_bit: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼Î»
+*           bit_size:  Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
+* ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµ    ï¿½ï¿½ï¿½ï¿½start_bit: 0~14
             bit_size:  1~16 
             bit_size<=16-start_bit
 ****************************************************************************/
@@ -104,24 +104,24 @@ void GPIO_bits_OUT(GPIO_TypeDef* GPIOx, u8 start_bit, u8 bit_size,u16 outdata)
 }
 
 /*****************************************************************************
-**********************ÒÔÏÂ´úÂë²Î¿¼ÍøÉÏ£¬½ö¹©Ñ§Ï°²Î¿¼**************************
+**********************ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½Ñ§Ï°ï¿½Î¿ï¿½**************************
 *****************************************************************************/
 /****************************************************************************
-* Ãû    ³Æ: void Stm32_Clock_Init(u32 plln,u32 pllm,u32 pllp,u32 pllq)
-* ¹¦    ÄÜ£ºÊ±ÖÓÏµÍ³ÅäÖÃº¯Êý
-* Èë¿Ú²ÎÊý£ºFvco:VCOÆµÂÊ
-            SYSCLK:ÏµÍ³Ê±ÖÓÆµÂÊ
-            Fusb:USB,SDIO,RNGµÈµÄÊ±ÖÓÆµÂÊ
-            Fs:PLLÊäÈëÊ±ÖÓÆµÂÊ,¿ÉÒÔÊÇHSI,HSEµÈ. 
-            plln:Ö÷PLL±¶ÆµÏµÊý(PLL±¶Æµ),È¡Öµ·¶Î§:64~432.
-            pllm:Ö÷PLLºÍÒôÆµPLL·ÖÆµÏµÊý(PLLÖ®Ç°µÄ·ÖÆµ),È¡Öµ·¶Î§:2~63.
-            pllp:ÏµÍ³Ê±ÖÓµÄÖ÷PLL·ÖÆµÏµÊý(PLLÖ®ºóµÄ·ÖÆµ),È¡Öµ·¶Î§:2,4,6,8.(½öÏÞÕâ4¸öÖµ!)
-            pllq:USB/SDIO/Ëæ»úÊý²úÉúÆ÷µÈµÄÖ÷PLL·ÖÆµÏµÊý(PLLÖ®ºóµÄ·ÖÆµ),È¡Öµ·¶Î§:2~15.
-* ·µ»Ø²ÎÊý£ºÎÞ
-* Ëµ    Ã÷£ºFvco=Fs*(plln/pllm);
+* ï¿½ï¿½    ï¿½ï¿½: void Stm32_Clock_Init(u32 plln,u32 pllm,u32 pllp,u32 pllq)
+* ï¿½ï¿½    ï¿½Ü£ï¿½Ê±ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½Ãºï¿½ï¿½ï¿½
+* ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½Fvco:VCOÆµï¿½ï¿½
+            SYSCLK:ÏµÍ³Ê±ï¿½ï¿½Æµï¿½ï¿½
+            Fusb:USB,SDIO,RNGï¿½Èµï¿½Ê±ï¿½ï¿½Æµï¿½ï¿½
+            Fs:PLLï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Æµï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½HSI,HSEï¿½ï¿½. 
+            plln:ï¿½ï¿½PLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLï¿½ï¿½Æµ),È¡Öµï¿½ï¿½Î§:64~432.
+            pllm:ï¿½ï¿½PLLï¿½ï¿½ï¿½ï¿½ÆµPLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLÖ®Ç°ï¿½Ä·ï¿½Æµ),È¡Öµï¿½ï¿½Î§:2~63.
+            pllp:ÏµÍ³Ê±ï¿½Óµï¿½ï¿½ï¿½PLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLÖ®ï¿½ï¿½Ä·ï¿½Æµ),È¡Öµï¿½ï¿½Î§:2,4,6,8.(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½Öµ!)
+            pllq:USB/SDIO/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Èµï¿½ï¿½ï¿½PLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLÖ®ï¿½ï¿½Ä·ï¿½Æµ),È¡Öµï¿½ï¿½Î§:2~15.
+* ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµ    ï¿½ï¿½ï¿½ï¿½Fvco=Fs*(plln/pllm);
             SYSCLK=Fvco/pllp=Fs*(plln/(pllm*pllp));
-            Fusb=Fvco/pllq=Fs*(plln/(pllm*pllq));Íâ²¿¾§ÕñÎª8MµÄÊ±ºò,ÍÆ¼öÖµ:plln=336,pllm=8,pllp=2,pllq=7.
-            µÃµ½:Fvco=8*(336/8)=336Mhz
+            Fusb=Fvco/pllq=Fs*(plln/(pllm*pllq));ï¿½â²¿ï¿½ï¿½ï¿½ï¿½Îª8Mï¿½ï¿½Ê±ï¿½ï¿½,ï¿½Æ¼ï¿½Öµ:plln=336,pllm=8,pllp=2,pllq=7.
+            ï¿½Ãµï¿½:Fvco=8*(336/8)=336Mhz
             SYSCLK=336/2=168Mhz
             Fusb=336/7=48Mhz
 ****************************************************************************/
@@ -131,118 +131,114 @@ void Stm32_Clock_Init(u32 plln,u32 pllm,u32 pllp,u32 pllq)
     RCC_OscInitTypeDef RCC_OscInitStructure; 
     RCC_ClkInitTypeDef RCC_ClkInitStructure;
     
-    __HAL_RCC_PWR_CLK_ENABLE(); //Ê¹ÄÜPWRÊ±ÖÓ
+    __HAL_RCC_PWR_CLK_ENABLE(); //Ê¹ï¿½ï¿½PWRÊ±ï¿½ï¿½
     
-    //ÏÂÃæÕâ¸öÉèÖÃÓÃÀ´ÉèÖÃµ÷Ñ¹Æ÷Êä³öµçÑ¹¼¶±ð£¬ÒÔ±ãÔÚÆ÷¼þÎ´ÒÔ×î´óÆµÂÊ¹¤×÷
-    //Ê±Ê¹ÐÔÄÜÓë¹¦ºÄÊµÏÖÆ½ºâ¡£
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);//ÉèÖÃµ÷Ñ¹Æ÷Êä³öµçÑ¹¼¶±ð1
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½Æµï¿½Ê¹ï¿½ï¿½ï¿½
+    //Ê±Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ë¹¦ï¿½ï¿½Êµï¿½ï¿½Æ½ï¿½â¡£
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);//ï¿½ï¿½ï¿½Ãµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½1
     
-    RCC_OscInitStructure.OscillatorType=RCC_OSCILLATORTYPE_HSE;    //Ê±ÖÓÔ´ÎªHSE
-    RCC_OscInitStructure.HSEState=RCC_HSE_ON;                      //´ò¿ªHSE
-    RCC_OscInitStructure.PLL.PLLState=RCC_PLL_ON;//´ò¿ªPLL
-    RCC_OscInitStructure.PLL.PLLSource=RCC_PLLSOURCE_HSE;//PLLÊ±ÖÓÔ´Ñ¡ÔñHSE
-    RCC_OscInitStructure.PLL.PLLM=pllm; //Ö÷PLLºÍÒôÆµPLL·ÖÆµÏµÊý(PLLÖ®Ç°µÄ·ÖÆµ),È¡Öµ·¶Î§:2~63.
-    RCC_OscInitStructure.PLL.PLLN=plln; //Ö÷PLL±¶ÆµÏµÊý(PLL±¶Æµ),È¡Öµ·¶Î§:64~432.  
-    RCC_OscInitStructure.PLL.PLLP=pllp; //ÏµÍ³Ê±ÖÓµÄÖ÷PLL·ÖÆµÏµÊý(PLLÖ®ºóµÄ·ÖÆµ),È¡Öµ·¶Î§:2,4,6,8.(½öÏÞÕâ4¸öÖµ!)
-    RCC_OscInitStructure.PLL.PLLQ=pllq; //USB/SDIO/Ëæ»úÊý²úÉúÆ÷µÈµÄÖ÷PLL·ÖÆµÏµÊý(PLLÖ®ºóµÄ·ÖÆµ),È¡Öµ·¶Î§:2~15.
-    ret=HAL_RCC_OscConfig(&RCC_OscInitStructure);//³õÊ¼»¯
+    RCC_OscInitStructure.OscillatorType=RCC_OSCILLATORTYPE_HSE;    //Ê±ï¿½ï¿½Ô´ÎªHSE
+    RCC_OscInitStructure.HSEState=RCC_HSE_ON;                      //ï¿½ï¿½HSE
+    RCC_OscInitStructure.PLL.PLLState=RCC_PLL_ON;//ï¿½ï¿½PLL
+    RCC_OscInitStructure.PLL.PLLSource=RCC_PLLSOURCE_HSE;//PLLÊ±ï¿½ï¿½Ô´Ñ¡ï¿½ï¿½HSE
+    RCC_OscInitStructure.PLL.PLLM=pllm; //ï¿½ï¿½PLLï¿½ï¿½ï¿½ï¿½ÆµPLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLÖ®Ç°ï¿½Ä·ï¿½Æµ),È¡Öµï¿½ï¿½Î§:2~63.
+    RCC_OscInitStructure.PLL.PLLN=plln; //ï¿½ï¿½PLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLï¿½ï¿½Æµ),È¡Öµï¿½ï¿½Î§:64~432.  
+    RCC_OscInitStructure.PLL.PLLP=pllp; //ÏµÍ³Ê±ï¿½Óµï¿½ï¿½ï¿½PLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLÖ®ï¿½ï¿½Ä·ï¿½Æµ),È¡Öµï¿½ï¿½Î§:2,4,6,8.(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½Öµ!)
+    RCC_OscInitStructure.PLL.PLLQ=pllq; //USB/SDIO/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Èµï¿½ï¿½ï¿½PLLï¿½ï¿½ÆµÏµï¿½ï¿½(PLLÖ®ï¿½ï¿½Ä·ï¿½Æµ),È¡Öµï¿½ï¿½Î§:2~15.
+    ret=HAL_RCC_OscConfig(&RCC_OscInitStructure);//ï¿½ï¿½Ê¼ï¿½ï¿½
 	
     if(ret!=HAL_OK) while(1);
     
-    //Ñ¡ÖÐPLL×÷ÎªÏµÍ³Ê±ÖÓÔ´²¢ÇÒÅäÖÃHCLK,PCLK1ºÍPCLK2
+    //Ñ¡ï¿½ï¿½PLLï¿½ï¿½ÎªÏµÍ³Ê±ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½HCLK,PCLK1ï¿½ï¿½PCLK2
     RCC_ClkInitStructure.ClockType=(RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2);
-    RCC_ClkInitStructure.SYSCLKSource=RCC_SYSCLKSOURCE_PLLCLK;//ÉèÖÃÏµÍ³Ê±ÖÓÊ±ÖÓÔ´ÎªPLL
-    RCC_ClkInitStructure.AHBCLKDivider=RCC_SYSCLK_DIV1;//AHB·ÖÆµÏµÊýÎª1
-    RCC_ClkInitStructure.APB1CLKDivider=RCC_HCLK_DIV4; //APB1·ÖÆµÏµÊýÎª4
-    RCC_ClkInitStructure.APB2CLKDivider=RCC_HCLK_DIV2; //APB2·ÖÆµÏµÊýÎª2
-    ret=HAL_RCC_ClockConfig(&RCC_ClkInitStructure,FLASH_LATENCY_5);//Í¬Ê±ÉèÖÃFLASHÑÓÊ±ÖÜÆÚÎª5WS£¬Ò²¾ÍÊÇ6¸öCPUÖÜÆÚ¡£
-		
+    RCC_ClkInitStructure.SYSCLKSource=RCC_SYSCLKSOURCE_PLLCLK;//ï¿½ï¿½ï¿½ï¿½ÏµÍ³Ê±ï¿½ï¿½Ê±ï¿½ï¿½Ô´ÎªPLL
+    RCC_ClkInitStructure.AHBCLKDivider=RCC_SYSCLK_DIV1;//AHBï¿½ï¿½ÆµÏµï¿½ï¿½Îª1
+    RCC_ClkInitStructure.APB1CLKDivider=RCC_HCLK_DIV4; //APB1ï¿½ï¿½ÆµÏµï¿½ï¿½Îª4
+    RCC_ClkInitStructure.APB2CLKDivider=RCC_HCLK_DIV2; //APB2ï¿½ï¿½ÆµÏµï¿½ï¿½Îª2
+    ret=HAL_RCC_ClockConfig(&RCC_ClkInitStructure,FLASH_LATENCY_5);//Í¬Ê±ï¿½ï¿½ï¿½ï¿½FLASHï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Îª5WSï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½6ï¿½ï¿½CPUï¿½ï¿½ï¿½Ú¡ï¿½
+
     if(ret!=HAL_OK) while(1);
 
-	 //STM32F405x/407x/415x/417x Z°æ±¾µÄÆ÷¼þÖ§³ÖÔ¤È¡¹¦ÄÜ
-	if (HAL_GetREVID() == 0x1001)
-	{
-		__HAL_FLASH_PREFETCH_BUFFER_ENABLE();  //Ê¹ÄÜflashÔ¤È¡
-	}
+    //STM32F405x/407x/415x/417x Zï¿½æ±¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö§ï¿½ï¿½Ô¤È¡ï¿½ï¿½ï¿½ï¿½
+    if (HAL_GetREVID() == 0x1001)
+    {
+        __HAL_FLASH_PREFETCH_BUFFER_ENABLE();  //Ê¹ï¿½ï¿½flashÔ¤È¡
+    }
 }
 
 
-//THUMBÖ¸Áî²»Ö§³Ö»ã±àÄÚÁª
-//²ÉÓÃÈçÏÂ·½·¨ÊµÏÖÖ´ÐÐ»ã±àÖ¸ÁîWFI  
-__asm void WFI_SET(void)
+//THUMBÖ¸ï¿½ support WFI instruction
+void WFI_SET(void)
 {
-	WFI;		  
+	__asm volatile("WFI");
 }
-//¹Ø±ÕËùÓÐÖÐ¶Ï(µ«ÊÇ²»°üÀ¨faultºÍNMIÖÐ¶Ï)
-__asm void INTX_DISABLE(void)
+// Disable all interrupts (except fault and NMI)
+void INTX_DISABLE(void)
 {
-	CPSID   I
-	BX      LR	  
+	__asm volatile("CPSID I");
 }
-//¿ªÆôËùÓÐÖÐ¶Ï
-__asm void INTX_ENABLE(void)
+// Enable all interrupts
+void INTX_ENABLE(void)
 {
-	CPSIE   I
-	BX      LR  
+	__asm volatile("CPSIE I");
 }
-//ÉèÖÃÕ»¶¥µØÖ·
-//addr:Õ»¶¥µØÖ·
-__asm void MSR_MSP(u32 addr) 
+// Set Main Stack Pointer
+void MSR_MSP(u32 addr)
 {
-	MSR MSP, r0 			//set Main Stack value
-	BX r14
+	// ç®€å•å®žçŽ°ï¼Œç›´æŽ¥èµ‹å€¼
+	*(volatile uint32_t *)0xE000ED08 = addr;
 }
 
-//ÀûÓÃÏµÍ³µÎ´ð¶¨Ê±£¬±àÐ´µÄÑÓÊ±º¯Êý
+//ï¿½ï¿½ï¿½ï¿½ÏµÍ³ï¿½Î´ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 
-static u8  fac_us=0; //usÑÓÊ±±¶³ËÊý			   
+static u8  fac_us=0; //usï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½			   
 
 /****************************************************************************
-* Ãû    ³Æ: delay_init()
-* ¹¦    ÄÜ£ºÑÓÊ±º¯Êý³õÊ¼»¯
-* Èë¿Ú²ÎÊý£ºÎÞ
-* ·µ»Ø²ÎÊý£ºÎÞ
-* Ëµ    Ã÷£º
+* ï¿½ï¿½    ï¿½ï¿½: delay_init()
+* ï¿½ï¿½    ï¿½Ü£ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+* ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµ    ï¿½ï¿½ï¿½ï¿½
 ****************************************************************************/
 void delay_init()
 {
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTickÆµÂÊÎªHCLK
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTickÆµï¿½ï¿½ÎªHCLK
 	fac_us=SYSCLK;					
 }								    
 
 /****************************************************************************
-* Ãû    ³Æ: void delay_us(u32 nus)
-* ¹¦    ÄÜ£ºÑÓÊ±nus
-* Èë¿Ú²ÎÊý£ºÒªÑÓÊ±µÄÎ¢ÃîÊý
-* ·µ»Ø²ÎÊý£ºÎÞ
-* Ëµ    Ã÷£ºnusµÄÖµ,²»Òª´óÓÚ798915us
+* ï¿½ï¿½    ï¿½ï¿½: void delay_us(u32 nus)
+* ï¿½ï¿½    ï¿½Ü£ï¿½ï¿½ï¿½Ê±nus
+* ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê±ï¿½ï¿½Î¢ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµ    ï¿½ï¿½ï¿½ï¿½nusï¿½ï¿½Öµ,ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½798915us
 ****************************************************************************/
 void delay_us(u32 nus)
 {		
 	u32 ticks;
 	u32 told,tnow,tcnt=0;
-	u32 reload=SysTick->LOAD;				//LOADµÄÖµ	    	 
-	ticks=nus*fac_us; 						//ÐèÒªµÄ½ÚÅÄÊý 
-	told=SysTick->VAL;        				//¸Õ½øÈëÊ±µÄ¼ÆÊýÆ÷Öµ
+	u32 reload=SysTick->LOAD;				//LOADï¿½ï¿½Öµ	    	 
+	ticks=nus*fac_us; 						//ï¿½ï¿½Òªï¿½Ä½ï¿½ï¿½ï¿½ï¿½ï¿½ 
+	told=SysTick->VAL;        				//ï¿½Õ½ï¿½ï¿½ï¿½Ê±ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 	while(1)
 	{
 		tnow=SysTick->VAL;	
 		if(tnow!=told)
 		{	    
-			if(tnow<told)tcnt+=told-tnow;	//ÕâÀï×¢ÒâÒ»ÏÂSYSTICKÊÇÒ»¸öµÝ¼õµÄ¼ÆÊýÆ÷¾Í¿ÉÒÔÁË.
+			if(tnow<told)tcnt+=told-tnow;	//ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½Ò»ï¿½ï¿½SYSTICKï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ý¼ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ï¿½ï¿½.
 			else tcnt+=reload-tnow+told;	    
 			told=tnow;
-			if(tcnt>=ticks)break;			//Ê±¼ä³¬¹ý/µÈÓÚÒªÑÓ³ÙµÄÊ±¼ä,ÔòÍË³ö.
+			if(tcnt>=ticks)break;			//Ê±ï¿½ä³¬ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½Òªï¿½Ó³Ùµï¿½Ê±ï¿½ï¿½,ï¿½ï¿½ï¿½Ë³ï¿½.
 		}  
 	}; 
 }
 
 /****************************************************************************
-* Ãû    ³Æ: void delay_ms(u16 nms)
-* ¹¦    ÄÜ£ºÑÓÊ±nms
-* Èë¿Ú²ÎÊý£ºÒªÑÓÊ±µÄºÁÃîÊý
-* ·µ»Ø²ÎÊý£ºÎÞ
-* Ëµ    Ã÷£º 
+* ï¿½ï¿½    ï¿½ï¿½: void delay_ms(u16 nms)
+* ï¿½ï¿½    ï¿½Ü£ï¿½ï¿½ï¿½Ê±nms
+* ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê±ï¿½Äºï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½Ø²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* Ëµ    ï¿½ï¿½ï¿½ï¿½ 
 ****************************************************************************/
 void delay_ms(u16 nms)
 {
