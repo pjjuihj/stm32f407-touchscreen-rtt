@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "ui_swipe.h"
 
 /* 全局变量 */
 lv_obj_t * g_current_page = NULL;
@@ -15,6 +16,9 @@ static void btn_selection_cb(lv_event_t * e);
  */
 void ui_init(void)
 {
+    /* 初始化滑动导航（创建 tileview） */
+    ui_swipe_init();
+
     /* 创建主菜单页面 */
     g_main_menu_page = ui_main_create();
 
@@ -87,32 +91,28 @@ lv_obj_t * ui_main_create(void)
 static void btn_input_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to input page");
-    lv_obj_t * page = ui_input_create(NULL);
-    ui_navigate_to(page);
+    ui_swipe_goto(SWIPE_PAGE_INPUT);
 }
 
 /* 导航到显示控件页面 */
 static void btn_display_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to display page");
-    lv_obj_t * page = ui_display_create(NULL);
-    ui_navigate_to(page);
+    ui_swipe_goto(SWIPE_PAGE_DISPLAY);
 }
 
 /* 导航到数据控件页面 */
 static void btn_data_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to data page");
-    lv_obj_t * page = ui_data_create();
-    ui_navigate_to(page);
+    ui_swipe_goto(SWIPE_PAGE_DATA);
 }
 
 /* 导航到选择控件页面 */
 static void btn_selection_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to selection page");
-    lv_obj_t * page = ui_selection_create();
-    ui_navigate_to(page);
+    ui_swipe_goto(SWIPE_PAGE_SELECTION);
 }
 
 /**
