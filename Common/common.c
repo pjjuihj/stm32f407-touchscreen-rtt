@@ -215,11 +215,22 @@ void delay_init()
 ****************************************************************************/
 void delay_us(u32 nus)
 {
-	/* NOP循环延时 + DWT超时保护 */
-	u32 i;
-	u32 limit = nus * 21;
-	if(limit > 1000000) limit = 1000000;  /* 防止溢出 */
-	for(i = 0; i < limit; i++) { __NOP(); }
+	u32 ticks;
+	u32 told,tnow,tcnt=0;
+	u32 reload=SysTick->LOAD;
+	ticks=nus*fac_us;
+	told=SysTick->VAL;
+	while(1)
+	{
+		tnow=SysTick->VAL;
+		if(tnow!=told)
+		{
+			if(tnow<told)tcnt+=told-tnow;
+			else tcnt+=reload-tnow+told;
+			told=tnow;
+			if(tcnt>=ticks)break;
+		}
+	};
 }
 
 /****************************************************************************

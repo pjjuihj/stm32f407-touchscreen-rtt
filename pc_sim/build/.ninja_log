@@ -1201,3 +1201,5 @@
 67	609	8071339829416055	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_bottom_nav.c.obj	d77a0f5a3b59f319
 72	609	8071339829456229	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_notification.c.obj	38e3eee4af45925b
 53	389	8071340123157802	lvgl_pc_sim.exe	7b211c95b6fe8c89
+35	477	8071342886134008	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_main.c.obj	8c1c40fb56558628
+35	247	8071343485637978	lvgl_pc_sim.exe	7b211c95b6fe8c89
