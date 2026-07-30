@@ -43,6 +43,39 @@ static void tileview_event_cb(lv_event_t * e)
 }
 
 /**
+ * @brief tileview GESTURE 回调（循环导航）
+ *
+ * 在 Main Menu 和 Selection 两端处理循环滑动：
+ * - Main Menu 左滑 -> 跳转到 Selection
+ * - Selection 右滑 -> 跳转到 Main Menu
+ */
+static void tileview_gesture_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if(code != LV_EVENT_GESTURE)
+    {
+        return;
+    }
+
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+
+    if(current_page == SWIPE_PAGE_MAIN && dir == LV_DIR_LEFT)
+    {
+        /* Main Menu 左滑 -> 循环到 Selection */
+        lv_obj_set_tile(tileview, tiles[SWIPE_PAGE_SELECTION], LV_ANIM_ON);
+        current_page = SWIPE_PAGE_SELECTION;
+        LV_LOG_USER("Circular nav: Main -> Selection");
+    }
+    else if(current_page == SWIPE_PAGE_SELECTION && dir == LV_DIR_RIGHT)
+    {
+        /* Selection 右滑 -> 循环到 Main Menu */
+        lv_obj_set_tile(tileview, tiles[SWIPE_PAGE_MAIN], LV_ANIM_ON);
+        current_page = SWIPE_PAGE_MAIN;
+        LV_LOG_USER("Circular nav: Selection -> Main");
+    }
+}
+
+/**
  * @brief 创建并初始化滑动导航
  */
 void ui_swipe_init(void)
@@ -61,8 +94,11 @@ void ui_swipe_init(void)
     /* 注册 VALUE_CHANGED 回调，用于同步用户手动滑动时的 current_page */
     lv_obj_add_event_cb(tileview, tileview_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
-    /* 添加 Main Menu tile (0, 0) - 仅支持右滑 */
-    tiles[SWIPE_PAGE_MAIN] = lv_tileview_add_tile(tileview, 0, 0, LV_DIR_RIGHT);
+    /* 注册 GESTURE 回调，用于处理循环导航 */
+    lv_obj_add_event_cb(tileview, tileview_gesture_cb, LV_EVENT_GESTURE, NULL);
+
+    /* 添加 Main Menu tile (0, 0) - 支持左右滑（左滑由 gesture_cb 处理循环导航） */
+    tiles[SWIPE_PAGE_MAIN] = lv_tileview_add_tile(tileview, 0, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_MAIN] != NULL)
     {
         ui_main_create(tiles[SWIPE_PAGE_MAIN]);
@@ -89,8 +125,8 @@ void ui_swipe_init(void)
         ui_data_create(tiles[SWIPE_PAGE_DATA]);
     }
 
-    /* 添加 Selection tile (4, 0) - 仅支持左滑 */
-    tiles[SWIPE_PAGE_SELECTION] = lv_tileview_add_tile(tileview, 4, 0, LV_DIR_LEFT);
+    /* 添加 Selection tile (4, 0) - 支持左右滑（右滑由 gesture_cb 处理循环导航） */
+    tiles[SWIPE_PAGE_SELECTION] = lv_tileview_add_tile(tileview, 4, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_SELECTION] != NULL)
     {
         ui_selection_create(tiles[SWIPE_PAGE_SELECTION]);

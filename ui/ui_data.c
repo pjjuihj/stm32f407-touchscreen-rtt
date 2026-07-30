@@ -6,9 +6,6 @@
 static lv_obj_t * chart = NULL;
 static lv_chart_series_t * ser1 = NULL;
 
-/* 回调函数 */
-static void back_btn_cb(lv_event_t * e);
-
 /**
  * @brief 初始化数据控件页面
  * @param parent 父对象（tileview tile）
@@ -22,21 +19,8 @@ lv_obj_t * ui_data_create(lv_obj_t * parent)
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
-    /* 创建返回按钮 */
-    lv_obj_t * back_btn = lv_btn_create(scr);
-    if(back_btn != NULL)
-    {
-        lv_obj_set_size(back_btn, 40, 30);
-        lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 5, 5);
-        lv_obj_add_event_cb(back_btn, back_btn_cb, LV_EVENT_CLICKED, NULL);
-
-        lv_obj_t * back_label = lv_label_create(back_btn);
-        if(back_label != NULL)
-        {
-            lv_label_set_text(back_label, LV_SYMBOL_LEFT " Back");
-            lv_obj_center(back_label);
-        }
-    }
+    /* 设置容器尺寸（与 ui_input.c / ui_display.c 保持一致） */
+    lv_obj_set_size(scr, 240, 320);
 
     /* 创建标题标签 */
     lv_obj_t * title = lv_label_create(scr);
@@ -51,7 +35,7 @@ lv_obj_t * ui_data_create(lv_obj_t * parent)
     lv_obj_t * container = lv_obj_create(scr);
     if(container != NULL)
     {
-        lv_obj_set_size(container, 230, 260);
+        lv_obj_set_size(container, 230, 280);
         lv_obj_align(container, LV_ALIGN_TOP_MID, 0, 35);
         lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
         lv_obj_set_style_border_width(container, 0, 0);
@@ -129,12 +113,4 @@ lv_obj_t * ui_data_create(lv_obj_t * parent)
     }
 
     return scr;
-}
-
-/* 返回按钮回调 */
-static void back_btn_cb(lv_event_t * e)
-{
-    LV_UNUSED(e);
-    LV_LOG_USER("Navigating back to main menu");
-    ui_swipe_goto(SWIPE_PAGE_MAIN);
 }
