@@ -35,7 +35,7 @@ lv_obj_t * ui_display_create(void)
         lv_obj_t * back_label = lv_label_create(back_btn);
         if(back_label != NULL)
         {
-            lv_label_set_text(back_label, LV_SYMBOL_LEFT " 返回");
+            lv_label_set_text(back_label, LV_SYMBOL_LEFT " Back");
             lv_obj_center(back_label);
         }
     }
@@ -44,7 +44,7 @@ lv_obj_t * ui_display_create(void)
     lv_obj_t * title = lv_label_create(scr);
     if(title != NULL)
     {
-        lv_label_set_text(title, "显示控件");
+        lv_label_set_text(title, "Display Controls");
         lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
         lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
     }

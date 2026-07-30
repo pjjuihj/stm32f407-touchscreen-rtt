@@ -31,7 +31,7 @@ lv_obj_t * ui_data_create(void)
         lv_obj_t * back_label = lv_label_create(back_btn);
         if(back_label != NULL)
         {
-            lv_label_set_text(back_label, LV_SYMBOL_LEFT " 返回");
+            lv_label_set_text(back_label, LV_SYMBOL_LEFT " Back");
             lv_obj_center(back_label);
         }
     }
@@ -40,7 +40,7 @@ lv_obj_t * ui_data_create(void)
     lv_obj_t * title = lv_label_create(scr);
     if(title != NULL)
     {
-        lv_label_set_text(title, "数据控件");
+        lv_label_set_text(title, "Data Controls");
         lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
         lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
     }
@@ -107,9 +107,9 @@ lv_obj_t * ui_data_create(void)
             lv_table_set_row_cnt(table, 4);
 
             /* 设置表头 */
-            lv_table_set_cell_value(table, 0, 0, "名称");
-            lv_table_set_cell_value(table, 0, 1, "值");
-            lv_table_set_cell_value(table, 0, 2, "状态");
+            lv_table_set_cell_value(table, 0, 0, "Name");
+            lv_table_set_cell_value(table, 0, 1, "Value");
+            lv_table_set_cell_value(table, 0, 2, "Status");
 
             /* 设置数据行 */
             lv_table_set_cell_value(table, 1, 0, "A");

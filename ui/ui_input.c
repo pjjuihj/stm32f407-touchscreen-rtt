@@ -162,6 +162,7 @@ static void arc_event_cb(lv_event_t * e)
 /* 返回按钮回调 */
 static void back_btn_cb(lv_event_t * e)
 {
+    LV_UNUSED(e);
     LV_LOG_USER("Navigating back to main menu");
     ui_navigate_to(g_main_menu_page);
 }
