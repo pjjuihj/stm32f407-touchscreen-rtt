@@ -24,13 +24,19 @@ void sdl_driver_init(void)
         return;
     }
 
-    /* 创建 LVGL 显示窗口（匹配硬件分辨率 240x320） */
+    /* 创建 LVGL 显示窗口（全屏模式） */
     disp = lv_sdl_window_create(240, 320);
     if (disp == NULL) {
         LV_LOG_ERROR("lv_sdl_window_create failed");
         return;
     }
     lv_sdl_window_set_title(disp, "LVGL PC Sim");
+
+    /* 设置窗口全屏 */
+    SDL_Window * window = lv_sdl_window_get_window(disp);
+    if (window != NULL) {
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    }
 
     /* 创建鼠标输入设备 */
     mouse = lv_sdl_mouse_create();
