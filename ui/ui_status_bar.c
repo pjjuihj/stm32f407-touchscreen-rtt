@@ -1,5 +1,9 @@
 #include "ui_status_bar.h"
+#include "ui_notification.h"
 #include <stdio.h>
+
+/* 回调函数 */
+static void status_bar_click_cb(lv_event_t * e);
 
 /**
  * @brief 创建状态栏组件
@@ -19,6 +23,9 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     lv_obj_set_style_bg_opa(status_bar, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(status_bar, 0, 0);
     lv_obj_set_style_pad_all(status_bar, 5, 0);
+
+    /* 添加点击事件，用于打开通知中心 */
+    lv_obj_add_event_cb(status_bar, status_bar_click_cb, LV_EVENT_CLICKED, NULL);
 
     /* 创建时间标签 */
     lv_obj_t * time_label = lv_label_create(status_bar);
@@ -57,4 +64,14 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     }
 
     return status_bar;
+}
+
+/**
+ * @brief 状态栏点击回调，打开通知中心
+ */
+static void status_bar_click_cb(lv_event_t * e)
+{
+    LV_UNUSED(e);
+    LV_LOG_USER("Status bar clicked, showing notification center");
+    ui_notification_show();
 }

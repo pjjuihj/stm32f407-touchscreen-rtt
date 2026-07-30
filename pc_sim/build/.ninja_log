@@ -1211,3 +1211,5 @@
 382	759	8071349808450927	lvgl_pc_sim.exe	7b211c95b6fe8c89
 65	652	8071352333991329	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_main.c.obj	8c1c40fb56558628
 653	1159	8071352339864387	lvgl_pc_sim.exe	7b211c95b6fe8c89
+75	417	8071354863642588	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_status_bar.c.obj	f7da49774bd2c5fd
+418	783	8071354867069619	lvgl_pc_sim.exe	7b211c95b6fe8c89
