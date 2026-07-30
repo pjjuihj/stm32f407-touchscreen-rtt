@@ -32,6 +32,9 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
     /* 创建容器（作为 tileview tile 的子对象） */
     lv_obj_t * scr = lv_obj_create(parent);
 
+    /* 设置容器大小为 100% 以填满 tile */
+    lv_obj_set_size(scr, LV_PCT(100), LV_PCT(100));
+
     /* 记录主菜单页面引用（用于返回导航） */
     g_main_menu_page = scr;
 
@@ -52,8 +55,8 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
     lv_obj_t * list = lv_list_create(scr);
     if(list != NULL)
     {
-        lv_obj_set_size(list, 200, 240);
-        lv_obj_center(list);
+        lv_obj_set_size(list, LV_PCT(100), LV_PCT(100));
+        lv_obj_set_style_pad_all(list, 10, 0);
 
         /* 输入控件按钮 */
         lv_obj_t * btn_input = lv_list_add_button(list, LV_SYMBOL_SETTINGS, "Input");

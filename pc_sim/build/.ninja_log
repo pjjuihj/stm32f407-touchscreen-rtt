@@ -1175,3 +1175,12 @@
 26622	32489	8071102046831984	lvgl/lib/liblvgl_thorvg.a	53b9ae65efafdacf
 32489	33576	8071102105494701	lvgl/lib/liblvgl.a	87a38acabded4c8a
 33577	34116	8071102116369395	lvgl_pc_sim.exe	bcaa256e51528826
+75	601	8071112309737412	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_selection.c.obj	af3a61cbdbbcc551
+71	614	8071112309696971	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_data.c.obj	729e0870be570c09
+66	614	8071112309651360	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_swipe.c.obj	1a925f601a86c457
+32	784	8071113434578355	CMakeFiles/lvgl_pc_sim.dir/sdl_driver.c.obj	43c9dca616830a87
+784	1528	8071113442105279	lvgl_pc_sim.exe	bcaa256e51528826
+57	788	8071119164873048	CMakeFiles/lvgl_pc_sim.dir/sdl_driver.c.obj	43c9dca616830a87
+789	1113	8071119172194912	lvgl_pc_sim.exe	bcaa256e51528826
+53	373	8071125132994769	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_main.c.obj	8c1c40fb56558628
+55	359	8071126910643783	lvgl_pc_sim.exe	bcaa256e51528826

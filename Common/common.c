@@ -204,8 +204,11 @@ static u8  fac_us=0; //us��ʱ������
 ****************************************************************************/
 void delay_init()
 {
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTickƵ��ΪHCLK
-	fac_us=SYSCLK;					
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick使用HCLK
+  /* 动态计算: fac_us = HCLK_freq / 1000000 (每微秒的tick数) */
+  /* SYSCLK=168MHz -> fac_us=168; 但如果实际时钟不同会自动适配 */
+  fac_us = (u8)(HAL_RCC_GetHCLKFreq() / 1000000);
+  if(fac_us == 0) fac_us = SYSCLK; /* 降级到宏定义值 */
 }								    
 
 /****************************************************************************
@@ -216,23 +219,26 @@ void delay_init()
 * ˵    ����nus��ֵ,��Ҫ����798915us
 ****************************************************************************/
 void delay_us(u32 nus)
-{		
+{
 	u32 ticks;
 	u32 told,tnow,tcnt=0;
-	u32 reload=SysTick->LOAD;				//LOAD��ֵ	    	 
-	ticks=nus*fac_us; 						//��Ҫ�Ľ����� 
-	told=SysTick->VAL;        				//�ս���ʱ�ļ�����ֵ
-	while(1)
+	u32 reload=SysTick->LOAD;				//LOAD值
+	u32 timeout = reload * 2;				//超时保护: 最多等2个SysTick周期
+	u32 wait = 0;
+	ticks=nus*fac_us; 						//需要的计数值
+	told=SysTick->VAL;        				//刚进入时的计数器值
+	while(wait < timeout)
 	{
-		tnow=SysTick->VAL;	
+		tnow=SysTick->VAL;
+		wait++;
 		if(tnow!=told)
-		{	    
-			if(tnow<told)tcnt+=told-tnow;	//����ע��һ��SYSTICK��һ���ݼ��ļ������Ϳ�����.
-			else tcnt+=reload-tnow+told;	    
+		{
+			if(tnow<told)tcnt+=told-tnow;	//正常递减
+			else tcnt+=reload-tnow+told;	//溢出处理
 			told=tnow;
-			if(tcnt>=ticks)break;			//ʱ�䳬��/����Ҫ�ӳٵ�ʱ��,���˳�.
-		}  
-	}; 
+			if(tcnt>=ticks)break;			//达到目标
+		}
+	};
 }
 
 /****************************************************************************
