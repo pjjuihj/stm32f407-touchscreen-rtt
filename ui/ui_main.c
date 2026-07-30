@@ -99,6 +99,7 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
                 lv_obj_set_style_shadow_opa(app_icon, LV_OPA_20, 0);
                 lv_obj_set_style_outline_width(app_icon, 0, 0);
                 lv_obj_set_style_outline_opa(app_icon, LV_OPA_TRANSP, 0);
+                lv_obj_set_scrollbar_mode(app_icon, LV_SCROLLBAR_MODE_OFF);
 
                 /* 创建图标 */
                 lv_obj_t * icon = lv_label_create(app_icon);
