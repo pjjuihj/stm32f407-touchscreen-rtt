@@ -24,6 +24,9 @@ lv_obj_t * ui_display_create(lv_obj_t * parent)
     /* 创建容器 */
     lv_obj_t * scr = lv_obj_create(parent);
 
+    /* 隐藏滚动条 */
+    lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
+
     /* 设置容器尺寸和样式 */
     lv_obj_set_size(scr, 240, 320);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);

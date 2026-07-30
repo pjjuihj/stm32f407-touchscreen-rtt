@@ -10,6 +10,9 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     lv_obj_t * status_bar = lv_obj_create(parent);
     if(status_bar == NULL) return NULL;
 
+    /* 隐藏滚动条 */
+    lv_obj_set_scrollbar_mode(status_bar, LV_SCROLLBAR_MODE_OFF);
+
     /* 设置状态栏大小和样式 */
     lv_obj_set_size(status_bar, LV_PCT(100), 30);
     lv_obj_set_style_bg_color(status_bar, lv_color_hex(0xF5F5F5), 0);

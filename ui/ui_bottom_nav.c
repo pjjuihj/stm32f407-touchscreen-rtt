@@ -24,6 +24,9 @@ lv_obj_t * ui_bottom_nav_create(lv_obj_t * parent)
     lv_obj_t * nav_bar = lv_obj_create(parent);
     if(nav_bar == NULL) return NULL;
 
+    /* 隐藏滚动条 */
+    lv_obj_set_scrollbar_mode(nav_bar, LV_SCROLLBAR_MODE_OFF);
+
     /* 设置导航栏大小和样式 */
     lv_obj_set_size(nav_bar, LV_PCT(100), 50);
     lv_obj_set_style_bg_color(nav_bar, lv_color_hex(0xFFFFFF), 0);

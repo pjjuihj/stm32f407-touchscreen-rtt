@@ -22,6 +22,9 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
     notification_panel = lv_obj_create(parent);
     if(notification_panel == NULL) return NULL;
 
+    /* 隐藏滚动条 */
+    lv_obj_set_scrollbar_mode(notification_panel, LV_SCROLLBAR_MODE_OFF);
+
     /* 设置面板大小和样式 */
     lv_obj_set_size(notification_panel, LV_PCT(100), LV_PCT(100));
     lv_obj_set_style_bg_color(notification_panel, lv_color_hex(0xFFFFFF), 0);
