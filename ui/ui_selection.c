@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "ui_swipe.h"
 
 /* 回调函数 */
 static void back_btn_cb(lv_event_t * e);
@@ -7,11 +8,12 @@ static void roller_event_cb(lv_event_t * e);
 
 /**
  * @brief 初始化选择控件页面
+ * @param parent 父对象（tileview tile）
  */
-lv_obj_t * ui_selection_create(void)
+lv_obj_t * ui_selection_create(lv_obj_t * parent)
 {
-    /* 创建新屏幕 */
-    lv_obj_t * scr = lv_obj_create(NULL);
+    /* 创建容器 */
+    lv_obj_t * scr = lv_obj_create(parent);
 
     /* 设置屏幕背景色 */
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
@@ -118,5 +120,5 @@ static void back_btn_cb(lv_event_t * e)
 {
     LV_UNUSED(e);
     LV_LOG_USER("Navigating back to main menu");
-    ui_navigate_to(g_main_menu_page);
+    ui_swipe_goto(SWIPE_PAGE_MAIN);
 }

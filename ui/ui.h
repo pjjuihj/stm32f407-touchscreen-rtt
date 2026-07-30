@@ -3,7 +3,7 @@
 
 #include "lvgl.h"
 
-/* 页面索引 */
+/* 页面索引（与 ui_swipe.h 中的 SWIPE_PAGE_* 保持一致） */
 #define PAGE_MAIN       0
 #define PAGE_INPUT      1
 #define PAGE_DISPLAY    2
@@ -25,9 +25,10 @@ void ui_init(void);
 
 /**
  * @brief 初始化主菜单页面
+ * @param parent 父对象（tileview tile）
  * @return 主菜单页面对象
  */
-lv_obj_t * ui_main_create(void);
+lv_obj_t * ui_main_create(lv_obj_t * parent);
 
 /**
  * @brief 初始化输入控件页面
@@ -45,20 +46,17 @@ lv_obj_t * ui_display_create(lv_obj_t * parent);
 
 /**
  * @brief 初始化数据控件页面
+ * @param parent 父对象（tileview tile）
  * @return 数据控件页面对象
  */
-lv_obj_t * ui_data_create(void);
+lv_obj_t * ui_data_create(lv_obj_t * parent);
 
 /**
  * @brief 初始化选择控件页面
+ * @param parent 父对象（tileview tile）
  * @return 选择控件页面对象
  */
-lv_obj_t * ui_selection_create(void);
+lv_obj_t * ui_selection_create(lv_obj_t * parent);
 
-/**
- * @brief 切换到指定页面
- * @param page 目标页面对象
- */
-void ui_navigate_to(lv_obj_t * page);
 
 #endif /* UI_H */

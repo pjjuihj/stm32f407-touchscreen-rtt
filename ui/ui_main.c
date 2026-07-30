@@ -16,26 +16,26 @@ static void btn_selection_cb(lv_event_t * e);
  */
 void ui_init(void)
 {
-    /* 初始化滑动导航（创建 tileview） */
+    /* 初始化滑动导航（创建 tileview，主菜单作为第一个 tile） */
     ui_swipe_init();
 
-    /* 创建主菜单页面 */
-    g_main_menu_page = ui_main_create();
-
-    /* 加载主菜单页面 */
-    lv_screen_load(g_main_menu_page);
+    /* 主菜单已作为 tileview 的第一个 tile 创建，无需单独加载 */
     g_current_page = g_main_menu_page;
 }
 
 /**
  * @brief 初始化主菜单页面
+ * @param parent 父对象（tileview tile）
  */
-lv_obj_t * ui_main_create(void)
+lv_obj_t * ui_main_create(lv_obj_t * parent)
 {
-    /* 创建新屏幕 */
-    lv_obj_t * scr = lv_obj_create(NULL);
+    /* 创建容器（作为 tileview tile 的子对象） */
+    lv_obj_t * scr = lv_obj_create(parent);
 
-    /* 设置屏幕背景色 */
+    /* 记录主菜单页面引用（用于返回导航） */
+    g_main_menu_page = scr;
+
+    /* 设置容器背景色 */
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
@@ -113,16 +113,4 @@ static void btn_selection_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to selection page");
     ui_swipe_goto(SWIPE_PAGE_SELECTION);
-}
-
-/**
- * @brief 切换到指定页面
- */
-void ui_navigate_to(lv_obj_t * page)
-{
-    if(page != NULL)
-    {
-        g_current_page = page;
-        lv_screen_load_anim(page, LV_SCREEN_LOAD_ANIM_MOVE_LEFT, 300, 0, false);
-    }
 }

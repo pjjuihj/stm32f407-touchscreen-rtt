@@ -61,37 +61,44 @@ void ui_swipe_init(void)
     /* 注册 VALUE_CHANGED 回调，用于同步用户手动滑动时的 current_page */
     lv_obj_add_event_cb(tileview, tileview_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
-    /* 添加 Input tile (0, 0) - 支持左滑 */
-    tiles[SWIPE_PAGE_INPUT] = lv_tileview_add_tile(tileview, 0, 0, LV_DIR_LEFT);
+    /* 添加 Main Menu tile (0, 0) - 仅支持右滑 */
+    tiles[SWIPE_PAGE_MAIN] = lv_tileview_add_tile(tileview, 0, 0, LV_DIR_RIGHT);
+    if(tiles[SWIPE_PAGE_MAIN] != NULL)
+    {
+        ui_main_create(tiles[SWIPE_PAGE_MAIN]);
+    }
+
+    /* 添加 Input tile (1, 0) - 支持左右滑 */
+    tiles[SWIPE_PAGE_INPUT] = lv_tileview_add_tile(tileview, 1, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_INPUT] != NULL)
     {
         ui_input_create(tiles[SWIPE_PAGE_INPUT]);
     }
 
-    /* 添加 Display tile (1, 0) - 支持左右滑 */
-    tiles[SWIPE_PAGE_DISPLAY] = lv_tileview_add_tile(tileview, 1, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
+    /* 添加 Display tile (2, 0) - 支持左右滑 */
+    tiles[SWIPE_PAGE_DISPLAY] = lv_tileview_add_tile(tileview, 2, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_DISPLAY] != NULL)
     {
         ui_display_create(tiles[SWIPE_PAGE_DISPLAY]);
     }
 
-    /* 添加 Data tile (2, 0) - 支持左右滑 */
-    tiles[SWIPE_PAGE_DATA] = lv_tileview_add_tile(tileview, 2, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
+    /* 添加 Data tile (3, 0) - 支持左右滑 */
+    tiles[SWIPE_PAGE_DATA] = lv_tileview_add_tile(tileview, 3, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_DATA] != NULL)
     {
-        ui_data_create();
+        ui_data_create(tiles[SWIPE_PAGE_DATA]);
     }
 
-    /* 添加 Selection tile (3, 0) - 支持右滑 */
-    tiles[SWIPE_PAGE_SELECTION] = lv_tileview_add_tile(tileview, 3, 0, LV_DIR_RIGHT);
+    /* 添加 Selection tile (4, 0) - 仅支持左滑 */
+    tiles[SWIPE_PAGE_SELECTION] = lv_tileview_add_tile(tileview, 4, 0, LV_DIR_LEFT);
     if(tiles[SWIPE_PAGE_SELECTION] != NULL)
     {
-        ui_selection_create();
+        ui_selection_create(tiles[SWIPE_PAGE_SELECTION]);
     }
 
-    /* 设置初始页面 */
-    lv_obj_set_tile(tileview, tiles[SWIPE_PAGE_INPUT], LV_ANIM_OFF);
-    current_page = SWIPE_PAGE_INPUT;
+    /* 设置初始页面为主菜单 */
+    lv_obj_set_tile(tileview, tiles[SWIPE_PAGE_MAIN], LV_ANIM_OFF);
+    current_page = SWIPE_PAGE_MAIN;
 
     LV_LOG_USER("Swipe navigation initialized");
 }
@@ -122,11 +129,6 @@ uint8_t ui_swipe_get_current(void)
  */
 void ui_swipe_goto_main(void)
 {
-    if(g_main_menu_page == NULL)
-    {
-        LV_LOG_ERROR("g_main_menu_page is not initialized, cannot navigate to main menu");
-        return;
-    }
     LV_LOG_USER("Navigating to main menu");
-    lv_screen_load(g_main_menu_page);
+    ui_swipe_goto(SWIPE_PAGE_MAIN);
 }
