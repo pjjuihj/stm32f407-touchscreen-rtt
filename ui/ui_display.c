@@ -1,12 +1,16 @@
 #include "ui.h"
+#include <stdio.h>
 
 /* 控件对象 */
 static lv_obj_t * bar = NULL;
+static lv_obj_t * bar_value_label = NULL;
+static lv_obj_t * slider = NULL;
 static lv_obj_t * led1 = NULL;
 static lv_obj_t * led2 = NULL;
 static lv_obj_t * led3 = NULL;
 
 /* 回调函数 */
+static void slider_event_cb(lv_event_t * e);
 static void led1_event_cb(lv_event_t * e);
 static void led2_event_cb(lv_event_t * e);
 static void led3_event_cb(lv_event_t * e);
@@ -51,7 +55,7 @@ lv_obj_t * ui_display_create(lv_obj_t * parent)
         lv_obj_t * bar_title = lv_label_create(container);
         if(bar_title != NULL)
         {
-            lv_label_set_text(bar_title, "Bar:");
+            lv_label_set_text(bar_title, "Progress Bar:");
             lv_obj_set_style_text_font(bar_title, &lv_font_montserrat_14, 0);
             lv_obj_set_width(bar_title, 200);
         }
@@ -63,7 +67,34 @@ lv_obj_t * ui_display_create(lv_obj_t * parent)
             lv_obj_set_width(bar, 200);
             lv_obj_set_height(bar, 20);
             lv_bar_set_range(bar, 0, 100);
-            lv_bar_set_value(bar, 60, LV_ANIM_ON);
+            lv_bar_set_value(bar, 50, LV_ANIM_ON);
+        }
+
+        /* Bar 值标签 */
+        bar_value_label = lv_label_create(container);
+        if(bar_value_label != NULL)
+        {
+            lv_label_set_text(bar_value_label, "50%");
+            lv_obj_set_style_text_font(bar_value_label, &lv_font_montserrat_14, 0);
+        }
+
+        /* Slider 标签 */
+        lv_obj_t * slider_title = lv_label_create(container);
+        if(slider_title != NULL)
+        {
+            lv_label_set_text(slider_title, "Slider Control:");
+            lv_obj_set_style_text_font(slider_title, &lv_font_montserrat_14, 0);
+            lv_obj_set_width(slider_title, 200);
+        }
+
+        /* Slider 控件 */
+        slider = lv_slider_create(container);
+        if(slider != NULL)
+        {
+            lv_obj_set_width(slider, 200);
+            lv_slider_set_range(slider, 0, 100);
+            lv_slider_set_value(slider, 50, LV_ANIM_OFF);
+            lv_obj_add_event_cb(slider, slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
         }
 
         /* Spinner 标签 */
@@ -135,6 +166,29 @@ lv_obj_t * ui_display_create(lv_obj_t * parent)
     }
 
     return scr;
+}
+
+/* 滑块值变化回调 */
+static void slider_event_cb(lv_event_t * e)
+{
+    lv_obj_t * obj = lv_event_get_target(e);
+    int32_t value = lv_slider_get_value(obj);
+
+    /* 更新进度条 */
+    if(bar != NULL)
+    {
+        lv_bar_set_value(bar, value, LV_ANIM_ON);
+    }
+
+    /* 更新进度条值标签 */
+    if(bar_value_label != NULL)
+    {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%ld%%", value);
+        lv_label_set_text(bar_value_label, buf);
+    }
+
+    LV_LOG_USER("Slider value: %ld", value);
 }
 
 /* LED 1 点击回调 */

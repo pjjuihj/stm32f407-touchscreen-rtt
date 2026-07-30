@@ -132,12 +132,6 @@ void Stm32_Clock_Init(u32 plln,u32 pllm,u32 pllp,u32 pllq)
     RCC_ClkInitTypeDef RCC_ClkInitStructure;
     
     __HAL_RCC_PWR_CLK_ENABLE(); //ʹ��PWRʱ��
-    /* Wait for PWR clock to stabilize */
-    { volatile int i; for(i=0; i<100; i++); }
-
-    //������������������õ�ѹ�������ѹ�����Ա�������δ�����Ƶ�ʹ���
-    //ʱʹ�����빦��ʵ��ƽ�⡣
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);//���õ�ѹ�������ѹ����1
     
     RCC_OscInitStructure.OscillatorType=RCC_OSCILLATORTYPE_HSE;    //ʱ��ԴΪHSE
     RCC_OscInitStructure.HSEState=RCC_HSE_ON;                      //��HSE
@@ -204,24 +198,8 @@ static u8  fac_us=0; //us��ʱ������
 ****************************************************************************/
 void delay_init()
 {
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick使用HCLK
-  /* 通过SysTick测量实际时钟频率 */
-  u32 start, end, ticks;
-  SysTick->LOAD = 0xFFFFFF;  /* 最大值 */
-  SysTick->VAL = 0;          /* 清零计数器 */
-  SysTick->CTRL = 0x05;      /* ENABLE + CLKSOURCE(HCLK) */
-  /* 等待约1ms (通过GPIO翻转测量) */
-  start = SysTick->VAL;
-  { volatile u32 i; for(i=0; i<16800; i++); } /* 约1ms的空循环 */
-  end = SysTick->VAL;
-  SysTick->CTRL = 0;
-  ticks = start - end; /* HCLK周期数/约1ms */
-  /* fac_us = 每微秒的tick数 = ticks / 1000 */
-  fac_us = (u8)(ticks / 1000);
-  if(fac_us == 0) fac_us = SYSCLK;
-  SysTick->LOAD = 167999;    /* 恢复1ms周期 */
-  SysTick->VAL = 0;
-  SysTick->CTRL = 0x07;      /* ENABLE + TICKINT + CLKSOURCE */
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTickƵ��ΪHCLK
+	fac_us=SYSCLK;					
 }								    
 
 /****************************************************************************
@@ -235,21 +213,18 @@ void delay_us(u32 nus)
 {
 	u32 ticks;
 	u32 told,tnow,tcnt=0;
-	u32 reload=SysTick->LOAD;				//LOAD值
-	u32 timeout = reload * 2;				//超时保护: 最多等2个SysTick周期
-	u32 wait = 0;
-	ticks=nus*fac_us; 						//需要的计数值
-	told=SysTick->VAL;        				//刚进入时的计数器值
-	while(wait < timeout)
+	u32 reload=SysTick->LOAD;
+	ticks=nus*fac_us;
+	told=SysTick->VAL;
+	while(1)
 	{
 		tnow=SysTick->VAL;
-		wait++;
 		if(tnow!=told)
 		{
-			if(tnow<told)tcnt+=told-tnow;	//正常递减
-			else tcnt+=reload-tnow+told;	//溢出处理
+			if(tnow<told)tcnt+=told-tnow;
+			else tcnt+=reload-tnow+told;
 			told=tnow;
-			if(tcnt>=ticks)break;			//达到目标
+			if(tcnt>=ticks)break;
 		}
 	};
 }

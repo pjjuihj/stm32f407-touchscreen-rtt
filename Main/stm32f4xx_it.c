@@ -75,18 +75,9 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
-  /* 读取 HardFault 状态寄存器 */
-  volatile uint32_t cfsr = *(volatile uint32_t *)0xE000ED28;
-  volatile uint32_t hfsr = *(volatile uint32_t *)0xE000ED2C;
-  volatile uint32_t mmfar = *(volatile uint32_t *)0xE000ED34;
-  volatile uint32_t bfar = *(volatile uint32_t *)0xE000ED38;
-
-  /* LED0 闪烁指示 */
-  volatile uint32_t i;
+  /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
   {
-    *(volatile uint32_t *)0x40021014 ^= 0x200; /* PG9翻转 */
-    for(i = 0; i < 500000; i++);
   }
 }
 
