@@ -13,6 +13,40 @@ extern lv_obj_t * ui_data_create(void);
 extern lv_obj_t * ui_selection_create(void);
 
 /**
+ * @brief tileview VALUE_CHANGED 回调
+ *
+ * 当用户通过触摸滑动切换 tile 时，LVGL 会触发此事件。
+ * 用于同步 current_page 变量，使其与实际显示的 tile 一致。
+ */
+static void tileview_event_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if(code != LV_EVENT_VALUE_CHANGED)
+    {
+        return;
+    }
+
+    lv_obj_t * active_tile = lv_tileview_get_tile_act(tileview);
+    if(active_tile == NULL)
+    {
+        return;
+    }
+
+    for(uint8_t i = 0; i < SWIPE_PAGE_COUNT; i++)
+    {
+        if(tiles[i] == active_tile)
+        {
+            if(current_page != i)
+            {
+                current_page = i;
+                LV_LOG_USER("Tile changed to page %d (swipe)", i);
+            }
+            break;
+        }
+    }
+}
+
+/**
  * @brief 将临时屏幕的子对象移动到 tile 中
  *
  * ui_*_create() 会创建独立的屏幕（lv_obj_create(NULL)），
@@ -57,6 +91,9 @@ void ui_swipe_init(void)
 
     /* 设置 tileview 全屏 */
     lv_obj_set_size(tileview, LV_PCT(100), LV_PCT(100));
+
+    /* 注册 VALUE_CHANGED 回调，用于同步用户手动滑动时的 current_page */
+    lv_obj_add_event_cb(tileview, tileview_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* 添加 Input tile (0, 0) - 支持左滑 */
     tiles[SWIPE_PAGE_INPUT] = lv_tileview_add_tile(tileview, 0, 0, LV_DIR_LEFT);
@@ -123,6 +160,11 @@ uint8_t ui_swipe_get_current(void)
  */
 void ui_swipe_goto_main(void)
 {
+    if(g_main_menu_page == NULL)
+    {
+        LV_LOG_ERROR("g_main_menu_page is not initialized, cannot navigate to main menu");
+        return;
+    }
     LV_LOG_USER("Navigating to main menu");
     lv_screen_load(g_main_menu_page);
 }
