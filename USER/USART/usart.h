@@ -15,4 +15,7 @@ void USART1_SendChar(uint8_t ch);
 // Send a string (blocking)
 void USART1_SendString(const char *str);
 
+/* DMA 句柄 */
+extern DMA_HandleTypeDef hdma_usart1_tx;
+
 #endif
