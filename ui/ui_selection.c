@@ -101,8 +101,8 @@ lv_obj_t * ui_selection_create(void)
 static void dropdown_event_cb(lv_event_t * e)
 {
     lv_obj_t * obj = lv_event_get_target(e);
-    uint16_t selected = lv_dropdown_get_selected(obj);
-    LV_LOG_USER("Dropdown selected: %d", selected);
+    uint32_t selected = lv_dropdown_get_selected(obj);
+    LV_LOG_USER("Dropdown selected: %lu", selected);
 }
 
 /* Roller 值变化回调 */

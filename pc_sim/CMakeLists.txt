@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12.4)
 project(lvgl_pc_sim C CXX)
 
+# NOTE: MinGW Makefiles generator fails with non-ASCII paths (e.g. Chinese characters).
+# Use Ninja instead: cmake -G Ninja ..
 set(CMAKE_C_STANDARD 11)
 
 # 禁用不需要的 LVGL 功能（必须在 add_subdirectory 之前设置）
