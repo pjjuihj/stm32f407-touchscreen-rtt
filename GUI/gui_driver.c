@@ -26,9 +26,6 @@
 static lv_color_t buf1[MY_DISP_HOR_RES * BUF_LINES];
 static lv_color_t buf2[MY_DISP_HOR_RES * BUF_LINES];
 
-/* 刷新计数器 */
-static volatile uint32_t flush_count = 0;
-
 /**
  * @brief LVGL刷新回调函数
  */
@@ -51,9 +48,6 @@ static void disp_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px
 
     /* 通知LVGL刷新完成 */
     lv_display_flush_ready(disp);
-
-    /* 增加刷新计数 */
-    flush_count++;
 }
 
 /**
@@ -67,9 +61,6 @@ void gui_disp_init(void)
     if(disp == NULL) {
         return;
     }
-
-    /* 设置颜色格式为RGB565 */
-    lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
 
     /* 设置刷新回调 */
     lv_display_set_flush_cb(disp, disp_flush_cb);
@@ -143,26 +134,12 @@ void gui_tick_init(void)
 }
 
 /*===========================================================================
- * 日志功能配置 - 环形缓冲区方式（不阻塞）
+ * 日志功能配置
  *===========================================================================*/
 
 #if LV_USE_LOG
-#define LV_LOG_BUF_SIZE 1024
-static char lv_log_buf[LV_LOG_BUF_SIZE];
-static volatile uint16_t lv_log_head = 0;
-static volatile uint16_t lv_log_tail = 0;
-
-static void lv_log_put_char(char c)
-{
-    uint16_t next = (lv_log_head + 1) % LV_LOG_BUF_SIZE;
-    if(next != lv_log_tail) {
-        lv_log_buf[lv_log_head] = c;
-        lv_log_head = next;
-    }
-}
-
 /**
- * @brief LVGL日志回调 - 仅写入缓冲区，不访问UART（安全）
+ * @brief LVGL日志回调 - 通过USART1输出
  */
 static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
 {
@@ -175,42 +152,26 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
         case LV_LOG_LEVEL_USER:  prefix = "[USER]  "; break;
         default:                 prefix = "[???]   "; break;
     }
-    for(const char *p = prefix; *p; p++) lv_log_put_char(*p);
-    for(const char *p = buf; *p; p++) lv_log_put_char(*p);
-    lv_log_put_char('\r');
-    lv_log_put_char('\n');
+    USART1_SendString(prefix);
+    USART1_SendString(buf);
+    USART1_SendString("\r\n");
 }
 #endif
 
 /**
- * @brief 初始化日志功能（必须在lv_init之前调用）
+ * @brief 初始化日志功能
  */
 void gui_log_init(void)
 {
 #if LV_USE_LOG
-    lv_log_head = 0;
-    lv_log_tail = 0;
     lv_log_register_print_cb(lv_log_print_g_cb);
 #endif
 }
 
 /**
- * @brief 主循环调用 - 从缓冲区发送到UART
+ * @brief 主循环中调用 - 保留接口兼容
  */
 void gui_log_flush(void)
 {
-#if LV_USE_LOG
-    while(lv_log_tail != lv_log_head) {
-        USART1_SendChar(lv_log_buf[lv_log_tail]);
-        lv_log_tail = (lv_log_tail + 1) % LV_LOG_BUF_SIZE;
-    }
-#endif
-}
-
-/**
- * @brief 获取刷新计数
- */
-uint32_t gui_get_flush_count(void)
-{
-    return flush_count;
+    /* LVGL日志已通过回调直接发送 */
 }

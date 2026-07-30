@@ -33,9 +33,4 @@ void gui_log_init(void);
  */
 void gui_log_flush(void);
 
-/**
- * @brief 获取显示刷新计数
- */
-uint32_t gui_get_flush_count(void);
-
 #endif /* __GUI_DRIVER_H */

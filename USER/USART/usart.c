@@ -55,5 +55,5 @@ void USART1_SendChar(uint8_t ch)
 
 void USART1_SendString(const char *str)
 {
-    HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen(str), 100); /* 100ms超时，避免阻塞 */
+    HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
 }
