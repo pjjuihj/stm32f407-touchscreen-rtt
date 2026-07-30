@@ -152,6 +152,9 @@ void ui_notification_show(void)
 {
     if(notification_panel != NULL)
     {
+        /* 移到最上层 */
+        lv_obj_move_foreground(notification_panel);
+        /* 显示通知面板 */
         lv_obj_clear_flag(notification_panel, LV_OBJ_FLAG_HIDDEN);
         is_visible = true;
         LV_LOG_USER("Notification center shown");
