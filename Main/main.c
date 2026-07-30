@@ -18,6 +18,7 @@ extern UART_HandleTypeDef huart1;
 // Simple receive buffer
 static uint8_t rxChar;
 volatile uint8_t rxInterruptCalled = 0;
+static volatile uint8_t txPending = 0;  // 非阻塞回声标志
 
 // Command buffer (increased to 64 bytes)
 static char cmdBuffer[64];
@@ -35,8 +36,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART1) {
         rxInterruptCalled = 1;
 
-        // Echo character
-        USART1_SendChar(rxChar);
+        // Echo character: 保存待发送字符，在主循环中发送（避免中断阻塞）
+        txPending = rxChar;
 
         // Process character
         if (rxChar == '\r' || rxChar == '\n') {
@@ -211,9 +212,9 @@ int main(void)
 	Touch_Init();
 	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Touch initialized");
 
-	/* LVGL初始化 */
-	lv_init();
+	/* LVGL初始化 - 日志必须在lv_init之前注册 */
 	gui_log_init();
+	lv_init();
 	gui_tick_init();
 	gui_disp_init();
 	gui_touch_init();
@@ -271,6 +272,13 @@ int main(void)
 
 	/* 主循环 */
 	while(1) {
+		/* 非阻塞回声: 在主循环中发送，避免中断阻塞 */
+		if(txPending != 0) {
+			USART1_SendChar(txPending);
+			txPending = 0;
+		}
+		/* LVGL日志: 从缓冲区发送到串口 */
+		gui_log_flush();
 		lv_task_handler();
 		delay_ms(5);
 	}

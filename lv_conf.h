@@ -37,7 +37,7 @@
  *===========================================================================*/
 #define LV_USE_LOG             1
 #if LV_USE_LOG
-    #define LV_LOG_LEVEL        LV_LOG_LEVEL_WARN
+    #define LV_LOG_LEVEL        LV_LOG_LEVEL_TRACE
     #define LV_LOG_PRINTF       1
 #endif
 

@@ -132,7 +132,9 @@ void Stm32_Clock_Init(u32 plln,u32 pllm,u32 pllp,u32 pllq)
     RCC_ClkInitTypeDef RCC_ClkInitStructure;
     
     __HAL_RCC_PWR_CLK_ENABLE(); //ʹ��PWRʱ��
-    
+    /* Wait for PWR clock to stabilize */
+    { volatile int i; for(i=0; i<100; i++); }
+
     //������������������õ�ѹ�������ѹ�����Ա�������δ�����Ƶ�ʹ���
     //ʱʹ�����빦��ʵ��ƽ�⡣
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);//���õ�ѹ�������ѹ����1

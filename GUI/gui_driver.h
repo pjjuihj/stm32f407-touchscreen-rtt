@@ -28,4 +28,9 @@ void gui_tick_init(void);
  */
 void gui_log_init(void);
 
+/**
+ * @brief 主循环中调用 - 发送缓冲区中的日志
+ */
+void gui_log_flush(void);
+
 #endif /* __GUI_DRIVER_H */

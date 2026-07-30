@@ -3,6 +3,9 @@
 
 #include "stm32f4xx_hal.h"
 
+// USART1 handle
+extern UART_HandleTypeDef huart1;
+
 // Initialize USART1 (PA9-TX, PA10-RX, 115200 baud, 8N1)
 void USART1_Init(void);
 

@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/CMJ/Desktop/TEST/\u89e6\u6478\u5c4f_usart/pc_sim/build/cmake_install.cmake",
+		"C:/Users/CMJ/Desktop/TEST/\u89e6\u6478\u5c4f_usart/pc_sim/build/lvgl/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

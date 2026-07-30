@@ -1,0 +1,15 @@
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/lvgl_pc_sim.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/edit_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/rebuild_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/list_install_components.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/install.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/install/local.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/CMakeFiles/install/strip.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/lvgl.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/lvgl_thorvg.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/edit_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/rebuild_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/list_install_components.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/install.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/install/local.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/pc_sim/build/lvgl/CMakeFiles/install/strip.dir

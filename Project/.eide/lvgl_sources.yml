@@ -1,0 +1,11 @@
+# LVGL source files for EIDE
+# This file auto-generates the list of LVGL sources
+
+version: "4.1"
+srcDirs:
+  - ../LVGL/src
+includePatterns:
+  - "**/*.c"
+excludePatterns:
+  - "**/test/**"
+  - "**/examples/**"

@@ -1,0 +1,416 @@
+version: "4.1"
+name: TOUCH
+type: ARM
+deviceName: STM32F407ZETx
+packDir: .pack/Keil/STM32F4xx_DFP.2.14.0
+srcDirs: []
+virtualFolder:
+  name: <virtual_root>
+  files: []
+  folders:
+    - name: Main
+      files:
+        - path: ../Main/main.c
+        - path: ../Main/stm32f4xx_it.c
+      folders: []
+    - name: Startup_config
+      files:
+        - path: ../Startup_config/system_stm32f4xx.c
+        - path: ../Startup_config/stm32f4xx_hal_msp.c
+        - path: ../Startup_config/startup_stm32f407xx_gcc.s
+        - path: ../Startup_config/cmsis_armcc.h
+        - path: ../Startup_config/cmsis_armclang.h
+        - path: ../Startup_config/cmsis_compiler.h
+        - path: ../Startup_config/cmsis_version.h
+        - path: ../Startup_config/core_cm4.h
+        - path: ../Startup_config/mpu_armv7.h
+      folders: []
+    - name: USER
+      files:
+        - path: ../USER/LED/led.c
+        - path: ../USER/BEEP/beep.c
+        - path: ../USER/KEY/key.c
+        - path: ../USER/LCD/lcd.c
+        - path: ../USER/TOUCH/ft5426.c
+        - path: ../USER/TOUCH/touch.c
+        - path: ../USER/TOUCH/xpt2046.c
+        - path: ../USER/USART/usart.c
+        - path: ../USER/LOG/log.c
+        - path: ../TEST/test_log.c
+      folders: []
+    - name: STM32F4_HAL_FWLIB
+      files:
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_cortex.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_gpio.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_pwr.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_pwr_ex.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_rcc.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_rcc_ex.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_dma_ex.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_dma.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_uart.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_ll_fsmc.c
+        - path: ../STM32F4xx_HAL_Driver/src/stm32f4xx_hal_sram.c
+      folders: []
+    - name: Common
+      files:
+        - path: ../Common/common.c
+      folders: []
+    - name: GUI
+      files:
+        - path: ../GUI/gui_driver.c
+      folders: []
+    - name: UI
+      files:
+        - path: ../ui/ui_main.c
+      folders: []
+    - name: LVGL
+      files:
+        - path: ../LVGL/src/lv_init.c
+        - path: ../LVGL/src/core/lv_group.c
+        - path: ../LVGL/src/core/lv_obj.c
+        - path: ../LVGL/src/core/lv_obj_class.c
+        - path: ../LVGL/src/core/lv_obj_draw.c
+        - path: ../LVGL/src/core/lv_obj_event.c
+        - path: ../LVGL/src/core/lv_obj_id_builtin.c
+        - path: ../LVGL/src/core/lv_obj_pos.c
+        - path: ../LVGL/src/core/lv_obj_property.c
+        - path: ../LVGL/src/core/lv_obj_scroll.c
+        - path: ../LVGL/src/core/lv_obj_style.c
+        - path: ../LVGL/src/core/lv_obj_style_gen.c
+        - path: ../LVGL/src/core/lv_obj_tree.c
+        - path: ../LVGL/src/core/lv_observer.c
+        - path: ../LVGL/src/core/lv_refr.c
+        - path: ../LVGL/src/display/lv_display.c
+        - path: ../LVGL/src/draw/lv_draw.c
+        - path: ../LVGL/src/draw/lv_draw_3d.c
+        - path: ../LVGL/src/draw/lv_draw_arc.c
+        - path: ../LVGL/src/draw/lv_draw_blur.c
+        - path: ../LVGL/src/draw/lv_draw_buf.c
+        - path: ../LVGL/src/draw/lv_draw_image.c
+        - path: ../LVGL/src/draw/lv_draw_label.c
+        - path: ../LVGL/src/draw/lv_draw_line.c
+        - path: ../LVGL/src/draw/lv_draw_mask.c
+        - path: ../LVGL/src/draw/lv_draw_rect.c
+        - path: ../LVGL/src/draw/lv_draw_triangle.c
+        - path: ../LVGL/src/draw/lv_draw_vector.c
+        - path: ../LVGL/src/draw/lv_image_decoder.c
+        - path: ../LVGL/src/draw/snapshot/lv_snapshot.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_arc.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_blur.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_border.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_box_shadow.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_fill.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_grad.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_img.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_letter.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_line.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_mask.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_mask_rect.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_transform.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_triangle.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_utils.c
+        - path: ../LVGL/src/draw/sw/lv_draw_sw_vector.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_a8.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_al88.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_argb8888.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_argb8888_premultiplied.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_i1.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_l8.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_rgb565.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_rgb565_swapped.c
+        - path: ../LVGL/src/draw/sw/blend/lv_draw_sw_blend_to_rgb888.c
+        - path: ../LVGL/src/draw/dma2d/lv_draw_dma2d.c
+        - path: ../LVGL/src/draw/dma2d/lv_draw_dma2d_fill.c
+        - path: ../LVGL/src/draw/dma2d/lv_draw_dma2d_img.c
+        - path: ../LVGL/src/font/lv_font.c
+        - path: ../LVGL/src/font/lv_font_montserrat_14.c
+        - path: ../LVGL/src/font/lv_font_montserrat_16.c
+        - path: ../LVGL/src/font/lv_font_montserrat_20.c
+        - path: ../LVGL/src/font/lv_font_montserrat_24.c
+        - path: ../LVGL/src/font/binfont_loader/lv_binfont_loader.c
+        - path: ../LVGL/src/font/fmt_txt/lv_font_fmt_txt.c
+        - path: ../LVGL/src/indev/lv_indev.c
+        - path: ../LVGL/src/indev/lv_indev_scroll.c
+        - path: ../LVGL/src/indev/lv_gridnav.c
+        - path: ../LVGL/src/indev/lv_indev_gesture.c
+        - path: ../LVGL/src/layouts/lv_layout.c
+        - path: ../LVGL/src/layouts/flex/lv_flex.c
+        - path: ../LVGL/src/layouts/grid/lv_grid.c
+        - path: ../LVGL/src/misc/lv_anim.c
+        - path: ../LVGL/src/misc/lv_anim_timeline.c
+        - path: ../LVGL/src/misc/lv_area.c
+        - path: ../LVGL/src/misc/lv_array.c
+        - path: ../LVGL/src/misc/lv_async.c
+        - path: ../LVGL/src/misc/lv_bidi.c
+        - path: ../LVGL/src/misc/lv_circle_buf.c
+        - path: ../LVGL/src/misc/lv_color.c
+        - path: ../LVGL/src/misc/lv_color_op.c
+        - path: ../LVGL/src/misc/lv_event.c
+        - path: ../LVGL/src/misc/lv_fs.c
+        - path: ../LVGL/src/misc/lv_grad.c
+        - path: ../LVGL/src/misc/lv_iter.c
+        - path: ../LVGL/src/misc/lv_ll.c
+        - path: ../LVGL/src/misc/lv_log.c
+        - path: ../LVGL/src/misc/lv_lru.c
+        - path: ../LVGL/src/misc/lv_math.c
+        - path: ../LVGL/src/misc/lv_matrix.c
+        - path: ../LVGL/src/misc/lv_palette.c
+        - path: ../LVGL/src/misc/lv_pending.c
+        - path: ../LVGL/src/misc/lv_profiler_builtin.c
+        - path: ../LVGL/src/misc/lv_rb.c
+        - path: ../LVGL/src/misc/lv_style.c
+        - path: ../LVGL/src/misc/lv_style_gen.c
+        - path: ../LVGL/src/misc/lv_templ.c
+        - path: ../LVGL/src/misc/lv_text.c
+        - path: ../LVGL/src/misc/lv_text_ap.c
+        - path: ../LVGL/src/misc/lv_timer.c
+        - path: ../LVGL/src/misc/lv_tree.c
+        - path: ../LVGL/src/misc/lv_utils.c
+        - path: ../LVGL/src/misc/cache/lv_cache.c
+        - path: ../LVGL/src/misc/cache/lv_cache_entry.c
+        - path: ../LVGL/src/misc/cache/class/lv_cache_lru_ll.c
+        - path: ../LVGL/src/misc/cache/class/lv_cache_lru_rb.c
+        - path: ../LVGL/src/misc/cache/class/lv_cache_sc_da.c
+        - path: ../LVGL/src/misc/cache/instance/lv_image_cache.c
+        - path: ../LVGL/src/misc/cache/instance/lv_image_header_cache.c
+        - path: ../LVGL/src/others/fragment/lv_fragment.c
+        - path: ../LVGL/src/others/fragment/lv_fragment_manager.c
+        - path: ../LVGL/src/stdlib/lv_mem.c
+        - path: ../LVGL/src/stdlib/builtin/lv_mem_core_builtin.c
+        - path: ../LVGL/src/stdlib/builtin/lv_sprintf_builtin.c
+        - path: ../LVGL/src/stdlib/builtin/lv_string_builtin.c
+        - path: ../LVGL/src/stdlib/builtin/lv_tlsf.c
+        - path: ../LVGL/src/themes/lv_theme.c
+        - path: ../LVGL/src/themes/default/lv_theme_default.c
+        - path: ../LVGL/src/themes/mono/lv_theme_mono.c
+        - path: ../LVGL/src/themes/simple/lv_theme_simple.c
+        - path: ../LVGL/src/tick/lv_tick.c
+        - path: ../LVGL/src/widgets/arc/lv_arc.c
+        - path: ../LVGL/src/widgets/bar/lv_bar.c
+        - path: ../LVGL/src/widgets/button/lv_button.c
+        - path: ../LVGL/src/widgets/buttonmatrix/lv_buttonmatrix.c
+        - path: ../LVGL/src/widgets/canvas/lv_canvas.c
+        - path: ../LVGL/src/widgets/chart/lv_chart.c
+        - path: ../LVGL/src/widgets/checkbox/lv_checkbox.c
+        - path: ../LVGL/src/widgets/dropdown/lv_dropdown.c
+        - path: ../LVGL/src/widgets/image/lv_image.c
+        - path: ../LVGL/src/widgets/imagebutton/lv_imagebutton.c
+        - path: ../LVGL/src/widgets/keyboard/lv_keyboard.c
+        - path: ../LVGL/src/widgets/label/lv_label.c
+        - path: ../LVGL/src/widgets/led/lv_led.c
+        - path: ../LVGL/src/widgets/line/lv_line.c
+        - path: ../LVGL/src/widgets/list/lv_list.c
+        - path: ../LVGL/src/widgets/menu/lv_menu.c
+        - path: ../LVGL/src/widgets/msgbox/lv_msgbox.c
+        - path: ../LVGL/src/widgets/roller/lv_roller.c
+        - path: ../LVGL/src/widgets/scale/lv_scale.c
+        - path: ../LVGL/src/widgets/slider/lv_slider.c
+        - path: ../LVGL/src/widgets/span/lv_span.c
+        - path: ../LVGL/src/widgets/spinbox/lv_spinbox.c
+        - path: ../LVGL/src/widgets/spinner/lv_spinner.c
+        - path: ../LVGL/src/widgets/switch/lv_switch.c
+        - path: ../LVGL/src/widgets/table/lv_table.c
+        - path: ../LVGL/src/widgets/tabview/lv_tabview.c
+        - path: ../LVGL/src/widgets/textarea/lv_textarea.c
+        - path: ../LVGL/src/widgets/tileview/lv_tileview.c
+        - path: ../LVGL/src/libs/bin_decoder/lv_bin_decoder.c
+        - path: ../LVGL/src/osal/lv_os.c
+      folders: []
+    - name: ::CMSIS
+      files: []
+      folders: []
+dependenceList: []
+outDir: build
+miscInfo:
+  uid: a15b3180c2eb288c4d3fccc6e8fb4eb0
+targets:
+  Target 1:
+    cppPreprocessAttrs:
+      defineList:
+        - USE_HAL_DRIVER
+        - STM32F407xx
+        - LV_CONF_INCLUDE_SIMPLE
+        - LV_LVGL_H_INCLUDE_SIMPLE
+      incList:
+        - .
+        - ../Common
+        - ../Main
+        - ../Startup_config
+        - ../STM32F4xx_HAL_Driver/inc
+        - ../USER/LED
+        - ../USER/LCD
+        - ../USER/BEEP
+        - ../USER/KEY
+        - ../USER/TOUCH
+        - ../USER/USART
+        - ../USER/LOG
+        - ../TEST
+        - ../LVGL
+        - ../LVGL/src
+        - ../LVGL/src/drivers/display/ili9341
+        - ../LVGL/src/drivers/display/lcd
+        - ../GUI
+        - ../ui
+        - .cmsis/include
+        - RTE/_Target 1
+      libList: []
+    excludeList: []
+    settings:
+      debugger: cortex-debug
+    toolchain: GCC
+    toolchainConfigMap:
+      AC5:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: single
+        options:
+          version: 4
+          afterBuildTasks: []
+          asm-compiler: {}
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            CXX_FLAGS: --diag_suppress=1 --diag_suppress=1295
+            C_FLAGS: --diag_suppress=1 --diag_suppress=1295
+            c99-mode: true
+            one-elf-section-per-function: true
+            optimization: level-0
+            warnings: all-warnings
+          global:
+            output-debug-info: enable
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            output-format: elf
+            ro-base: "0x08000000"
+            rw-base: "0x20000000"
+        scatterFilePath: ""
+        storageLayout:
+          RAM:
+            - id: 1
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 3
+              isChecked: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              noInit: false
+              tag: RAM
+            - id: 1
+              isChecked: true
+              mem:
+                size: "0x20000"
+                startAddr: "0x20000000"
+              noInit: false
+              tag: IRAM
+            - id: 2
+              isChecked: false
+              mem:
+                size: "0x10000"
+                startAddr: "0x10000000"
+              noInit: false
+              tag: IRAM
+          ROM:
+            - id: 1
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 3
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: ROM
+            - id: 1
+              isChecked: true
+              isStartup: true
+              mem:
+                size: "0x100000"
+                startAddr: "0x8000000"
+              tag: IROM
+            - id: 2
+              isChecked: false
+              isStartup: false
+              mem:
+                size: "0x0"
+                startAddr: "0x0"
+              tag: IROM
+        useCustomScatterFile: false
+      GCC:
+        archExtensions: ""
+        cpuType: Cortex-M4
+        floatingPointHardware: single
+        options:
+          version: 5
+          afterBuildTasks: []
+          asm-compiler: {}
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            language-c: c11
+            language-cpp: c++11
+            one-elf-section-per-data: true
+            one-elf-section-per-function: true
+            optimization: level-debug
+            warnings: all-warnings
+          global:
+            $float-abi-type: hard
+            arm-thumb-mode: thumb
+            callgraph-info: true
+            not-use-syscalls: true
+            output-debug-info: enable
+            stack-usage: true
+            use-newlib-nano: true
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            $toolName: auto
+            LIB_FLAGS: -lm
+            output-format: elf
+            remove-unused-input-sections: true
+        scatterFilePath: STM32F407VGTx_FLASH.ld
+        storageLayout:
+          RAM: []
+          ROM: []
+        useCustomScatterFile: true
+    uploadConfigMap:
+      JLink:
+        baseAddr: ""
+        bin: ""
+        cpuInfo:
+          cpuName: "null"
+          vendor: "null"
+        otherCmds: ""
+        proType: 1
+        speed: 8000
+      OpenOCD:
+        baseAddr: "0x08000000"
+        bin: ""
+        interface: cmsis-dap
+        target: stm32f4x
+    uploader: OpenOCD

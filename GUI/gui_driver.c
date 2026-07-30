@@ -7,6 +7,7 @@
 #include "lcd.h"
 #include "touch.h"
 #include "xpt2046.h"
+#include "usart.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
 
@@ -133,46 +134,66 @@ void gui_tick_init(void)
 }
 
 /*===========================================================================
- * 日志功能配置
+ * 日志功能配置 - 环形缓冲区方式（不阻塞）
  *===========================================================================*/
 
 #if LV_USE_LOG
+#define LV_LOG_BUF_SIZE 1024
+static char lv_log_buf[LV_LOG_BUF_SIZE];
+static volatile uint16_t lv_log_head = 0;
+static volatile uint16_t lv_log_tail = 0;
+
+static void lv_log_put_char(char c)
+{
+    uint16_t next = (lv_log_head + 1) % LV_LOG_BUF_SIZE;
+    if(next != lv_log_tail) {
+        lv_log_buf[lv_log_head] = c;
+        lv_log_head = next;
+    }
+}
+
 /**
- * @brief 官方日志回调函数
+ * @brief LVGL日志回调 - 仅写入缓冲区，不访问UART（安全）
  */
 static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
 {
+    const char *prefix;
     switch(level) {
-        case LV_LOG_LEVEL_TRACE:
-            printf("[TRACE] %s\n", buf);
-            break;
-        case LV_LOG_LEVEL_INFO:
-            printf("[INFO]  %s\n", buf);
-            break;
-        case LV_LOG_LEVEL_WARN:
-            printf("[WARN]  %s\n", buf);
-            break;
-        case LV_LOG_LEVEL_ERROR:
-            printf("[ERROR] %s\n", buf);
-            break;
-        case LV_LOG_LEVEL_USER:
-            printf("[USER]  %s\n", buf);
-            break;
-        default:
-            printf("[???]   %s\n", buf);
-            break;
+        case LV_LOG_LEVEL_TRACE: prefix = "[TRACE] "; break;
+        case LV_LOG_LEVEL_INFO:  prefix = "[INFO]  "; break;
+        case LV_LOG_LEVEL_WARN:  prefix = "[WARN]  "; break;
+        case LV_LOG_LEVEL_ERROR: prefix = "[ERROR] "; break;
+        case LV_LOG_LEVEL_USER:  prefix = "[USER]  "; break;
+        default:                 prefix = "[???]   "; break;
     }
+    for(const char *p = prefix; *p; p++) lv_log_put_char(*p);
+    for(const char *p = buf; *p; p++) lv_log_put_char(*p);
+    lv_log_put_char('\r');
+    lv_log_put_char('\n');
 }
 #endif
 
 /**
- * @brief 初始化日志功能
+ * @brief 初始化日志功能（必须在lv_init之前调用）
  */
 void gui_log_init(void)
 {
 #if LV_USE_LOG
+    lv_log_head = 0;
+    lv_log_tail = 0;
     lv_log_register_print_cb(lv_log_print_g_cb);
-    printf("=== LVGL v%d.%d.%d Log Started ===\n",
-           LVGL_VERSION_MAJOR, LVGL_VERSION_MINOR, LVGL_VERSION_PATCH);
+#endif
+}
+
+/**
+ * @brief 主循环调用 - 从缓冲区发送到UART
+ */
+void gui_log_flush(void)
+{
+#if LV_USE_LOG
+    while(lv_log_tail != lv_log_head) {
+        USART1_SendChar(lv_log_buf[lv_log_tail]);
+        lv_log_tail = (lv_log_tail + 1) % LV_LOG_BUF_SIZE;
+    }
 #endif
 }

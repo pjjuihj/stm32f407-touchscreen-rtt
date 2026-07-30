@@ -50,7 +50,7 @@ void USART1_Init(void)
 
 void USART1_SendChar(uint8_t ch)
 {
-    HAL_UART_Transmit(&huart1, &ch, 1, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart1, &ch, 1, 10); /* 10ms timeout, avoid blocking in ISR */
 }
 
 void USART1_SendString(const char *str)
