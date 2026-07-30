@@ -85,8 +85,13 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
             if(app_icon != NULL)
             {
                 lv_obj_set_size(app_icon, 60, 70);
-                lv_obj_set_style_bg_opa(app_icon, LV_OPA_TRANSP, 0);
+                lv_obj_set_style_bg_color(app_icon, lv_color_hex(0xE3F2FD), 0);
+                lv_obj_set_style_bg_opa(app_icon, LV_OPA_COVER, 0);
+                lv_obj_set_style_radius(app_icon, 15, 0);
                 lv_obj_set_style_border_width(app_icon, 0, 0);
+                lv_obj_set_style_shadow_width(app_icon, 10, 0);
+                lv_obj_set_style_shadow_color(app_icon, lv_color_hex(0x000000), 0);
+                lv_obj_set_style_shadow_opa(app_icon, LV_OPA_20, 0);
 
                 /* 创建图标 */
                 lv_obj_t * icon = lv_label_create(app_icon);
@@ -94,7 +99,8 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
                 {
                     lv_label_set_text(icon, apps[i].symbol);
                     lv_obj_set_style_text_font(icon, &lv_font_montserrat_16, 0);
-                    lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 0);
+                    lv_obj_set_style_text_color(icon, lv_color_hex(0x2196F3), 0);
+                    lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 5);
                 }
 
                 /* 创建名称标签 */
@@ -103,6 +109,7 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
                 {
                     lv_label_set_text(name, apps[i].name);
                     lv_obj_set_style_text_font(name, &lv_font_montserrat_12, 0);
+                    lv_obj_set_style_text_color(name, lv_color_hex(0x333333), 0);
                     lv_obj_align(name, LV_ALIGN_BOTTOM_MID, 0, 0);
                 }
 

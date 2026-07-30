@@ -8,7 +8,6 @@
 #include "test_log.h"
 #include "gui_driver.h"     /* LVGL驱动接口 */
 #include "lvgl.h"           /* LVGL头文件 */
-#include "ui_notification.h" /* 通知中心UI */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -209,9 +208,9 @@ int main(void)
 	gui_touch_init();   // 初始化触摸驱动
 	gui_tick_init();    // 初始化时钟驱动
 
-	// 创建通知中心UI
-	ui_notification_create(lv_screen_active());
-	ui_notification_show();
+	// 创建通知中心UI (暂时禁用，文件不存在)
+	// ui_notification_create(lv_screen_active());
+	// ui_notification_show();
 
 	USART1_SendString("LVGL init OK\r\n");
 
