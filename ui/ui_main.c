@@ -87,7 +87,7 @@ lv_obj_t * ui_main_create(void)
 static void btn_input_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to input page");
-    lv_obj_t * page = ui_input_create();
+    lv_obj_t * page = ui_input_create(NULL);
     ui_navigate_to(page);
 }
 
@@ -95,7 +95,7 @@ static void btn_input_cb(lv_event_t * e)
 static void btn_display_cb(lv_event_t * e)
 {
     LV_LOG_USER("Navigating to display page");
-    lv_obj_t * page = ui_display_create();
+    lv_obj_t * page = ui_display_create(NULL);
     ui_navigate_to(page);
 }
 

@@ -45,17 +45,15 @@ lv_obj_t * ui_display_create(lv_obj_t * parent);
 
 /**
  * @brief 初始化数据控件页面
- * @param parent 父对象（tileview tile）
  * @return 数据控件页面对象
  */
-lv_obj_t * ui_data_create(lv_obj_t * parent);
+lv_obj_t * ui_data_create(void);
 
 /**
  * @brief 初始化选择控件页面
- * @param parent 父对象（tileview tile）
  * @return 选择控件页面对象
  */
-lv_obj_t * ui_selection_create(lv_obj_t * parent);
+lv_obj_t * ui_selection_create(void);
 
 /**
  * @brief 切换到指定页面

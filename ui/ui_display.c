@@ -7,38 +7,23 @@ static lv_obj_t * led2 = NULL;
 static lv_obj_t * led3 = NULL;
 
 /* 回调函数 */
-static void back_btn_cb(lv_event_t * e);
 static void led1_event_cb(lv_event_t * e);
 static void led2_event_cb(lv_event_t * e);
 static void led3_event_cb(lv_event_t * e);
 
 /**
  * @brief 初始化显示控件页面
+ * @param parent 父对象（tileview tile）
  */
-lv_obj_t * ui_display_create(void)
+lv_obj_t * ui_display_create(lv_obj_t * parent)
 {
-    /* 创建新屏幕 */
-    lv_obj_t * scr = lv_obj_create(NULL);
+    /* 创建容器 */
+    lv_obj_t * scr = lv_obj_create(parent);
 
-    /* 设置屏幕背景色 */
+    /* 设置容器尺寸和样式 */
+    lv_obj_set_size(scr, 240, 320);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
-
-    /* 创建返回按钮 */
-    lv_obj_t * back_btn = lv_btn_create(scr);
-    if(back_btn != NULL)
-    {
-        lv_obj_set_size(back_btn, 40, 30);
-        lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 5, 5);
-        lv_obj_add_event_cb(back_btn, back_btn_cb, LV_EVENT_CLICKED, NULL);
-
-        lv_obj_t * back_label = lv_label_create(back_btn);
-        if(back_label != NULL)
-        {
-            lv_label_set_text(back_label, LV_SYMBOL_LEFT " Back");
-            lv_obj_center(back_label);
-        }
-    }
 
     /* 创建标题标签 */
     lv_obj_t * title = lv_label_create(scr);
@@ -53,7 +38,7 @@ lv_obj_t * ui_display_create(void)
     lv_obj_t * container = lv_obj_create(scr);
     if(container != NULL)
     {
-        lv_obj_set_size(container, 230, 260);
+        lv_obj_set_size(container, 230, 280);
         lv_obj_align(container, LV_ALIGN_TOP_MID, 0, 35);
         lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
         lv_obj_set_style_border_width(container, 0, 0);
@@ -197,10 +182,3 @@ static void led3_event_cb(lv_event_t * e)
     }
 }
 
-/* 返回按钮回调 */
-static void back_btn_cb(lv_event_t * e)
-{
-    LV_UNUSED(e);
-    LV_LOG_USER("Navigating back to main menu");
-    ui_navigate_to(g_main_menu_page);
-}

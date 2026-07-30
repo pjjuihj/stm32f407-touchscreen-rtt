@@ -6,11 +6,7 @@ static lv_obj_t * tileview = NULL;
 static lv_obj_t * tiles[SWIPE_PAGE_COUNT] = {NULL};
 static uint8_t current_page = SWIPE_PAGE_INPUT;
 
-/* 页面创建函数声明 (来自 ui.h) */
-extern lv_obj_t * ui_input_create(lv_obj_t * parent);
-extern lv_obj_t * ui_display_create(lv_obj_t * parent);
-extern lv_obj_t * ui_data_create(lv_obj_t * parent);
-extern lv_obj_t * ui_selection_create(lv_obj_t * parent);
+/* 页面创建函数声明已包含在 ui.h 中 */
 
 /**
  * @brief tileview VALUE_CHANGED 回调
@@ -83,14 +79,14 @@ void ui_swipe_init(void)
     tiles[SWIPE_PAGE_DATA] = lv_tileview_add_tile(tileview, 2, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_DATA] != NULL)
     {
-        ui_data_create(tiles[SWIPE_PAGE_DATA]);
+        ui_data_create();
     }
 
     /* 添加 Selection tile (3, 0) - 支持右滑 */
     tiles[SWIPE_PAGE_SELECTION] = lv_tileview_add_tile(tileview, 3, 0, LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_SELECTION] != NULL)
     {
-        ui_selection_create(tiles[SWIPE_PAGE_SELECTION]);
+        ui_selection_create();
     }
 
     /* 设置初始页面 */
