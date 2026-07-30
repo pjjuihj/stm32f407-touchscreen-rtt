@@ -57,7 +57,7 @@ lv_obj_t * ui_data_create(lv_obj_t * parent)
         chart = lv_chart_create(container);
         if(chart != NULL)
         {
-            lv_obj_set_size(chart, 200, 100);
+            lv_obj_set_size(chart, LV_PCT(100), 100);
             lv_chart_set_type(chart, LV_CHART_TYPE_LINE);
             lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, -100, 100);
             lv_chart_set_point_count(chart, 50);
@@ -88,7 +88,7 @@ lv_obj_t * ui_data_create(lv_obj_t * parent)
         lv_obj_t * table = lv_table_create(container);
         if(table != NULL)
         {
-            lv_obj_set_width(table, 200);
+            lv_obj_set_width(table, LV_PCT(100));
             lv_table_set_col_cnt(table, 3);
             lv_table_set_row_cnt(table, 4);
 

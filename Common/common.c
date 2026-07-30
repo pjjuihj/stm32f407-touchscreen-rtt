@@ -205,10 +205,23 @@ static u8  fac_us=0; //us��ʱ������
 void delay_init()
 {
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick使用HCLK
-  /* 动态计算: fac_us = HCLK_freq / 1000000 (每微秒的tick数) */
-  /* SYSCLK=168MHz -> fac_us=168; 但如果实际时钟不同会自动适配 */
-  fac_us = (u8)(HAL_RCC_GetHCLKFreq() / 1000000);
-  if(fac_us == 0) fac_us = SYSCLK; /* 降级到宏定义值 */
+  /* 通过SysTick测量实际时钟频率 */
+  u32 start, end, ticks;
+  SysTick->LOAD = 0xFFFFFF;  /* 最大值 */
+  SysTick->VAL = 0;          /* 清零计数器 */
+  SysTick->CTRL = 0x05;      /* ENABLE + CLKSOURCE(HCLK) */
+  /* 等待约1ms (通过GPIO翻转测量) */
+  start = SysTick->VAL;
+  { volatile u32 i; for(i=0; i<16800; i++); } /* 约1ms的空循环 */
+  end = SysTick->VAL;
+  SysTick->CTRL = 0;
+  ticks = start - end; /* HCLK周期数/约1ms */
+  /* fac_us = 每微秒的tick数 = ticks / 1000 */
+  fac_us = (u8)(ticks / 1000);
+  if(fac_us == 0) fac_us = SYSCLK;
+  SysTick->LOAD = 167999;    /* 恢复1ms周期 */
+  SysTick->VAL = 0;
+  SysTick->CTRL = 0x07;      /* ENABLE + TICKINT + CLKSOURCE */
 }								    
 
 /****************************************************************************
