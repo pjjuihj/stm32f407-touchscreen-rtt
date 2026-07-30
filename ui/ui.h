@@ -58,5 +58,9 @@ lv_obj_t * ui_data_create(lv_obj_t * parent);
  */
 lv_obj_t * ui_selection_create(lv_obj_t * parent);
 
+/* 组件接口 */
+#include "ui_status_bar.h"
+#include "ui_bottom_nav.h"
+#include "ui_notification.h"
 
 #endif /* UI_H */
