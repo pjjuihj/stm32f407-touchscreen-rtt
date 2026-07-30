@@ -73,6 +73,10 @@ add_executable(lvgl_pc_sim
 # 共享 UI 代码
 target_sources(lvgl_pc_sim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_input.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_display.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_data.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_selection.c
 )
 
 # 包含目录
