@@ -39,7 +39,7 @@ lv_obj_t * ui_main_create(void)
     lv_obj_t * title = lv_label_create(scr);
     if(title != NULL)
     {
-        lv_label_set_text(title, "LVGL 控件演示");
+        lv_label_set_text(title, "LVGL Widget Demo");
         lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
         lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
     }
@@ -52,28 +52,28 @@ lv_obj_t * ui_main_create(void)
         lv_obj_center(list);
 
         /* 输入控件按钮 */
-        lv_obj_t * btn_input = lv_list_add_button(list, LV_SYMBOL_SETTINGS, "输入控件");
+        lv_obj_t * btn_input = lv_list_add_button(list, LV_SYMBOL_SETTINGS, "Input");
         if(btn_input != NULL)
         {
             lv_obj_add_event_cb(btn_input, btn_input_cb, LV_EVENT_CLICKED, NULL);
         }
 
         /* 显示控件按钮 */
-        lv_obj_t * btn_display = lv_list_add_button(list, LV_SYMBOL_IMAGE, "显示控件");
+        lv_obj_t * btn_display = lv_list_add_button(list, LV_SYMBOL_IMAGE, "Display");
         if(btn_display != NULL)
         {
             lv_obj_add_event_cb(btn_display, btn_display_cb, LV_EVENT_CLICKED, NULL);
         }
 
         /* 数据控件按钮 */
-        lv_obj_t * btn_data = lv_list_add_button(list, LV_SYMBOL_LIST, "数据控件");
+        lv_obj_t * btn_data = lv_list_add_button(list, LV_SYMBOL_LIST, "Data");
         if(btn_data != NULL)
         {
             lv_obj_add_event_cb(btn_data, btn_data_cb, LV_EVENT_CLICKED, NULL);
         }
 
         /* 选择控件按钮 */
-        lv_obj_t * btn_selection = lv_list_add_button(list, LV_SYMBOL_OK, "选择控件");
+        lv_obj_t * btn_selection = lv_list_add_button(list, LV_SYMBOL_OK, "Selection");
         if(btn_selection != NULL)
         {
             lv_obj_add_event_cb(btn_selection, btn_selection_cb, LV_EVENT_CLICKED, NULL);
