@@ -52,6 +52,9 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
     /* 设置容器大小 */
     lv_obj_set_size(scr, LV_PCT(100), LV_PCT(100));
 
+    /* 隐藏滚动条 */
+    lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
+
     /* 记录主菜单页面引用 */
     g_main_menu_page = scr;
 
