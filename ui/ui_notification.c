@@ -38,7 +38,7 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
     lv_obj_t * title = lv_label_create(notification_panel);
     if(title != NULL)
     {
-        lv_label_set_text(title, "通知中心");
+        lv_label_set_text(title, "Notification Center");
         lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
         lv_obj_set_width(title, LV_PCT(100));
     }
@@ -47,7 +47,7 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
     lv_obj_t * quick_settings_title = lv_label_create(notification_panel);
     if(quick_settings_title != NULL)
     {
-        lv_label_set_text(quick_settings_title, "快速设置");
+        lv_label_set_text(quick_settings_title, "Quick Settings");
         lv_obj_set_style_text_font(quick_settings_title, &lv_font_montserrat_14, 0);
         lv_obj_set_width(quick_settings_title, LV_PCT(100));
     }
@@ -67,7 +67,7 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
         lv_obj_set_style_pad_row(quick_settings_grid, 5, 0);
 
         /* 创建快速设置按钮 */
-        const char * quick_settings_labels[] = {"Wi-Fi", "蓝牙", "亮度", "飞行", "手电", "自动"};
+        const char * quick_settings_labels[] = {"Wi-Fi", "Bluetooth", "Brightness", "Airplane", "Flashlight", "Auto"};
         void (*quick_settings_callbacks[])(lv_event_t * e) = {
             wifi_btn_cb, bluetooth_btn_cb, brightness_btn_cb,
             airplane_btn_cb, flashlight_btn_cb, auto_btn_cb
@@ -99,7 +99,7 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
     lv_obj_t * notifications_title = lv_label_create(notification_panel);
     if(notifications_title != NULL)
     {
-        lv_label_set_text(notifications_title, "通知");
+        lv_label_set_text(notifications_title, "Notifications");
         lv_obj_set_style_text_font(notifications_title, &lv_font_montserrat_14, 0);
         lv_obj_set_width(notifications_title, LV_PCT(100));
     }
@@ -111,9 +111,9 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
         lv_obj_set_size(notification_list, LV_PCT(100), 150);
 
         /* 添加示例通知 */
-        lv_obj_t * notif1 = lv_list_add_btn(notification_list, LV_SYMBOL_IMAGE, "应用通知 1");
-        lv_obj_t * notif2 = lv_list_add_btn(notification_list, LV_SYMBOL_IMAGE, "应用通知 2");
-        lv_obj_t * notif3 = lv_list_add_btn(notification_list, LV_SYMBOL_IMAGE, "应用通知 3");
+        lv_obj_t * notif1 = lv_list_add_btn(notification_list, LV_SYMBOL_IMAGE, "App Notification 1");
+        lv_obj_t * notif2 = lv_list_add_btn(notification_list, LV_SYMBOL_IMAGE, "App Notification 2");
+        lv_obj_t * notif3 = lv_list_add_btn(notification_list, LV_SYMBOL_IMAGE, "App Notification 3");
         LV_UNUSED(notif1);
         LV_UNUSED(notif2);
         LV_UNUSED(notif3);
@@ -129,7 +129,7 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
         lv_obj_t * close_label = lv_label_create(close_btn);
         if(close_label != NULL)
         {
-            lv_label_set_text(close_label, "关闭");
+            lv_label_set_text(close_label, "Close");
             lv_obj_center(close_label);
         }
 

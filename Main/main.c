@@ -6,8 +6,9 @@
 #include "usart.h"
 #include "log.h"
 #include "test_log.h"
-#include "gui_driver.h"     /* 新增: LVGL驱动接口 */
-#include "lvgl.h"           /* 新增: LVGL头文件 */
+#include "gui_driver.h"     /* LVGL驱动接口 */
+#include "lvgl.h"           /* LVGL头文件 */
+#include "ui_notification.h" /* 通知中心UI */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -201,10 +202,31 @@ int main(void)
 	delay_ms(100);
 	USART1_SendString("UART OK\r\n");  // 发送字符串
 
-	/* 主循环 */
+	// LVGL 初始化
+	gui_log_init();     // 初始化日志（必须在lv_init之前）
+	lv_init();          // 初始化LVGL内核
+	gui_disp_init();    // 初始化显示驱动
+	gui_touch_init();   // 初始化触摸驱动
+	gui_tick_init();    // 初始化时钟驱动
+
+	// 创建通知中心UI
+	ui_notification_create(lv_screen_active());
+	ui_notification_show();
+
+	USART1_SendString("LVGL init OK\r\n");
+
+	/* 主循环 - 处理LVGL任务 */
+	uint32_t last_led_tick = 0;
 	while(1) {
-		LED0 = !LED0;
-		delay_ms(500);
+		lv_task_handler();  // 处理LVGL事件和渲染
+		gui_log_flush();    // 刷新LVGL日志到UART
+
+		// LED 心跳指示（每500ms闪烁一次）
+		uint32_t now = HAL_GetTick();
+		if(now - last_led_tick >= 500) {
+			LED0 = !LED0;
+			last_led_tick = now;
+		}
 	}
 }
 
