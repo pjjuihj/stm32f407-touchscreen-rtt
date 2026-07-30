@@ -186,101 +186,25 @@ static void btn_event_cb(lv_event_t *e)
 
 int main(void)
 {
-  HAL_Init();                    	//��ʼ��HAL��
-  Stm32_Clock_Init(336,8,2,7);  	//����ʱ��,168Mhz
-	delay_init();     //��ʱ������ʼ��
-	LED_Init();				//LED��ʼ��
-	BEEP_Init();      //��������ʼ��
-	KEY_Init();       //������ʼ��
+  HAL_Init();                    	//初始化HAL库
+  Stm32_Clock_Init(336,8,2,7);  	//设置时钟,168Mhz
+	delay_init();     //延迟函数初始化
 
 	// Initialize USART1 FIRST - for debug output
 	USART1_Init();
 	delay_ms(100);  // Wait for USART to be ready
 
-	// Enable USART1 receive interrupt
-	HAL_UART_Receive_IT(&huart1, &rxChar, 1);
-
-	// Initialize log system AFTER USART is ready
-	Log_Init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "System starting...");
-
-	/* 初始化LCD */
-	LCD_Init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LCD initialized");
-
-	/* 初始化触摸 */
-	Touch_Init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Touch initialized");
-
-	/* LVGL初始化 - 日志必须在lv_init之前注册 */
-	gui_log_init();
-	lv_init();
-	gui_tick_init();
-	gui_disp_init();
-	gui_touch_init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LVGL initialized");
-
-	/* 设置屏幕背景色 */
-	lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFFFFFF), 0);
-	lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, 0);
-
-	/* 创建标题标签 */
-	lv_obj_t *title = lv_label_create(lv_screen_active());
-	if(title != NULL)
-	{
-		lv_label_set_text(title, "LVGL Image Demo");
-		lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
-		lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
-	}
-
-	/* 创建带图标的按钮1 - 使用LVGL符号 */
-	lv_obj_t *btn1 = lv_button_create(lv_screen_active());
-	if(btn1 != NULL)
-	{
-		lv_obj_set_size(btn1, 120, 50);
-		lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
-		lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, NULL);
-
-		lv_obj_t *label1 = lv_label_create(btn1);
-		if(label1 != NULL)
-		{
-			/* LV_SYMBOL_HOME 是LVGL内置的主页图标 */
-			lv_label_set_text(label1, LV_SYMBOL_HOME " Home");
-			lv_obj_center(label1);
-		}
-	}
-
-	/* 创建带图标的按钮2 - 使用LVGL符号 */
-	lv_obj_t *btn2 = lv_button_create(lv_screen_active());
-	if(btn2 != NULL)
-	{
-		lv_obj_set_size(btn2, 120, 50);
-		lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
-		lv_obj_add_event_cb(btn2, btn_event_cb, LV_EVENT_CLICKED, NULL);
-
-		lv_obj_t *label2 = lv_label_create(btn2);
-		if(label2 != NULL)
-		{
-			/* LV_SYMBOL_SETTINGS 是LVGL内置的设置图标 */
-			lv_label_set_text(label2, LV_SYMBOL_SETTINGS " Settings");
-			lv_obj_center(label2);
-		}
-	}
-
-	/* 强制刷新整个屏幕 */
-	lv_refr_now(NULL);
+	// 简单测试：只输出串口信息
+	USART1_SendString("A");  // 发送单个字符
+	delay_ms(100);
+	USART1_SendString("B");  // 发送单个字符
+	delay_ms(100);
+	USART1_SendString("UART OK\r\n");  // 发送字符串
 
 	/* 主循环 */
 	while(1) {
-		/* 非阻塞回声: 在主循环中发送，避免中断阻塞 */
-		if(txPending != 0) {
-			USART1_SendChar(txPending);
-			txPending = 0;
-		}
-		/* LVGL日志: 从缓冲区发送到串口 */
-		gui_log_flush();
-		lv_task_handler();
-		delay_ms(5);
+		LED0 = !LED0;
+		delay_ms(500);
 	}
 }
 

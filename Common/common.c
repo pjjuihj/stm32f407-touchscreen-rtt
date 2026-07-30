@@ -198,8 +198,12 @@ static u8  fac_us=0; //us��ʱ������
 ****************************************************************************/
 void delay_init()
 {
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTickƵ��ΪHCLK
-	fac_us=SYSCLK;					
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+	fac_us=SYSCLK;
+	/* 启用DWT周期计数器 */
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DWT->CYCCNT = 0;
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }								    
 
 /****************************************************************************

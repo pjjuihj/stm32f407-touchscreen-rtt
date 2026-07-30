@@ -26,6 +26,9 @@
 static lv_color_t buf1[MY_DISP_HOR_RES * BUF_LINES];
 static lv_color_t buf2[MY_DISP_HOR_RES * BUF_LINES];
 
+/* 刷新计数器 */
+static volatile uint32_t flush_count = 0;
+
 /**
  * @brief LVGL刷新回调函数
  */
@@ -48,6 +51,9 @@ static void disp_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px
 
     /* 通知LVGL刷新完成 */
     lv_display_flush_ready(disp);
+
+    /* 增加刷新计数 */
+    flush_count++;
 }
 
 /**
@@ -61,6 +67,9 @@ void gui_disp_init(void)
     if(disp == NULL) {
         return;
     }
+
+    /* 设置颜色格式为RGB565 */
+    lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
 
     /* 设置刷新回调 */
     lv_display_set_flush_cb(disp, disp_flush_cb);
@@ -196,4 +205,12 @@ void gui_log_flush(void)
         lv_log_tail = (lv_log_tail + 1) % LV_LOG_BUF_SIZE;
     }
 #endif
+}
+
+/**
+ * @brief 获取刷新计数
+ */
+uint32_t gui_get_flush_count(void)
+{
+    return flush_count;
 }

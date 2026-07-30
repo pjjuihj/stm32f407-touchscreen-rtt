@@ -76,6 +76,9 @@ add_executable(lvgl_pc_sim
 target_sources(lvgl_pc_sim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_swipe.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_status_bar.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_bottom_nav.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_notification.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_input.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_display.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../ui/ui_data.c
