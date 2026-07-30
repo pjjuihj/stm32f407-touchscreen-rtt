@@ -6,11 +6,11 @@ static lv_obj_t * tileview = NULL;
 static lv_obj_t * tiles[SWIPE_PAGE_COUNT] = {NULL};
 static uint8_t current_page = SWIPE_PAGE_INPUT;
 
-/* 页面创建函数声明 (来自 ui.h，无参数版本) */
-extern lv_obj_t * ui_input_create(void);
-extern lv_obj_t * ui_display_create(void);
-extern lv_obj_t * ui_data_create(void);
-extern lv_obj_t * ui_selection_create(void);
+/* 页面创建函数声明 (来自 ui.h) */
+extern lv_obj_t * ui_input_create(lv_obj_t * parent);
+extern lv_obj_t * ui_display_create(lv_obj_t * parent);
+extern lv_obj_t * ui_data_create(lv_obj_t * parent);
+extern lv_obj_t * ui_selection_create(lv_obj_t * parent);
 
 /**
  * @brief tileview VALUE_CHANGED 回调
@@ -47,36 +47,6 @@ static void tileview_event_cb(lv_event_t * e)
 }
 
 /**
- * @brief 将临时屏幕的子对象移动到 tile 中
- *
- * ui_*_create() 会创建独立的屏幕（lv_obj_create(NULL)），
- * 此函数将屏幕上的所有子控件移动到 tile 中，然后删除临时屏幕。
- *
- * @param tile 目标 tile 对象
- * @param temp_screen 临时屏幕对象
- */
-static void move_children_to_tile(lv_obj_t * tile, lv_obj_t * temp_screen)
-{
-    if(tile == NULL || temp_screen == NULL)
-    {
-        return;
-    }
-
-    uint32_t count = lv_obj_get_child_count(temp_screen);
-    for(uint32_t i = 0; i < count; i++)
-    {
-        lv_obj_t * child = lv_obj_get_child(temp_screen, 0);
-        if(child == NULL)
-        {
-            break;
-        }
-        lv_obj_set_parent(child, tile);
-    }
-
-    lv_obj_del(temp_screen);
-}
-
-/**
  * @brief 创建并初始化滑动导航
  */
 void ui_swipe_init(void)
@@ -99,32 +69,28 @@ void ui_swipe_init(void)
     tiles[SWIPE_PAGE_INPUT] = lv_tileview_add_tile(tileview, 0, 0, LV_DIR_LEFT);
     if(tiles[SWIPE_PAGE_INPUT] != NULL)
     {
-        lv_obj_t * scr = ui_input_create();
-        move_children_to_tile(tiles[SWIPE_PAGE_INPUT], scr);
+        ui_input_create(tiles[SWIPE_PAGE_INPUT]);
     }
 
     /* 添加 Display tile (1, 0) - 支持左右滑 */
     tiles[SWIPE_PAGE_DISPLAY] = lv_tileview_add_tile(tileview, 1, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_DISPLAY] != NULL)
     {
-        lv_obj_t * scr = ui_display_create();
-        move_children_to_tile(tiles[SWIPE_PAGE_DISPLAY], scr);
+        ui_display_create(tiles[SWIPE_PAGE_DISPLAY]);
     }
 
     /* 添加 Data tile (2, 0) - 支持左右滑 */
     tiles[SWIPE_PAGE_DATA] = lv_tileview_add_tile(tileview, 2, 0, LV_DIR_LEFT | LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_DATA] != NULL)
     {
-        lv_obj_t * scr = ui_data_create();
-        move_children_to_tile(tiles[SWIPE_PAGE_DATA], scr);
+        ui_data_create(tiles[SWIPE_PAGE_DATA]);
     }
 
     /* 添加 Selection tile (3, 0) - 支持右滑 */
     tiles[SWIPE_PAGE_SELECTION] = lv_tileview_add_tile(tileview, 3, 0, LV_DIR_RIGHT);
     if(tiles[SWIPE_PAGE_SELECTION] != NULL)
     {
-        lv_obj_t * scr = ui_selection_create();
-        move_children_to_tile(tiles[SWIPE_PAGE_SELECTION], scr);
+        ui_selection_create(tiles[SWIPE_PAGE_SELECTION]);
     }
 
     /* 设置初始页面 */
