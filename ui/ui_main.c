@@ -71,6 +71,7 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
     {
         lv_obj_set_size(app_grid, LV_PCT(100), LV_PCT(100));
         lv_obj_set_scrollbar_mode(app_grid, LV_SCROLLBAR_MODE_OFF);
+        lv_obj_set_scroll_dir(app_grid, LV_DIR_NONE);
         lv_obj_align(app_grid, LV_ALIGN_TOP_MID, 0, 30);
         lv_obj_set_style_bg_opa(app_grid, LV_OPA_TRANSP, 0);
         lv_obj_set_style_border_width(app_grid, 0, 0);
