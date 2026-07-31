@@ -341,7 +341,9 @@ void gui_log_init(void)
     memset(&dma_scheduler, 0, sizeof(dma_scheduler));
 
     // 注册 LVGL 日志回调
+#if LV_USE_LOG
     lv_log_register_print_cb(lv_log_print_g_cb);
+#endif
 }
 
 /**
@@ -357,6 +359,7 @@ void gui_log_flush(void)
  */
 void gui_log_write(const char *str)
 {
+    if(!str) return;
     for(const char *p = str; *p; p++) {
         ring_buf_put(&custom_ring, *p);
     }
