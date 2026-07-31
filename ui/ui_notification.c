@@ -150,14 +150,21 @@ lv_obj_t * ui_notification_create(lv_obj_t * parent)
  */
 void ui_notification_show(void)
 {
+    LV_LOG_USER("ui_notification_show called, notification_panel: %p", notification_panel);
     if(notification_panel != NULL)
     {
         /* 移到最上层 */
         lv_obj_move_foreground(notification_panel);
         /* 显示通知面板 */
         lv_obj_clear_flag(notification_panel, LV_OBJ_FLAG_HIDDEN);
+        /* 强制刷新 */
+        lv_refr_now(NULL);
         is_visible = true;
         LV_LOG_USER("Notification center shown");
+    }
+    else
+    {
+        LV_LOG_ERROR("notification_panel is NULL!");
     }
 }
 
