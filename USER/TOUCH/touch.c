@@ -4,6 +4,7 @@
 #include "lcd.h"
 #include "led.h"
 #include "log.h"
+#include <stdio.h>
 
 /*********************************************************************************
 *********************�������� STM32F407Ӧ�ÿ�����(�����)*************************
@@ -64,7 +65,7 @@ void Draw_Point(u16 x,u16 y,u16 color)
 //���败�������Ժ���
 void R_Touch_test(void)
 {
-	u8 i=0;	  
+	u8 i=0;
 	while(1)
 	{
 		XPT2046_Scan(0); 		 
@@ -74,13 +75,10 @@ void R_Touch_test(void)
 				if(Xdown>(lcd_width-40)&&Ydown>lcd_height-18)
 				{
 					Clear_Screen();
-					Log_Write(LOG_MODULE_TOUCH, LOG_LEVEL_INFO, "Screen cleared");
 				}
 				else
 				{
 					Draw_Point(Xdown,Ydown,RED);
-					Log_Write(LOG_MODULE_TOUCH, LOG_LEVEL_DEBUG,
-					          "Touch: x=%d, y=%d", Xdown, Ydown);
 				}
 			} 
     			

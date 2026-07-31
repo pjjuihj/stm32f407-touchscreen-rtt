@@ -1,4 +1,5 @@
 #include "ui.h"
+<<<<<<< Updated upstream
 #include "ui_swipe.h"
 #include "ui_status_bar.h"
 #include "ui_bottom_nav.h"
@@ -7,6 +8,8 @@
 /* 全局变量 */
 lv_obj_t * g_current_page = NULL;
 lv_obj_t * g_main_menu_page = NULL;
+=======
+>>>>>>> Stashed changes
 
 /* 应用图标数据 */
 typedef struct {
@@ -62,6 +65,7 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
+<<<<<<< Updated upstream
     /* 创建状态栏 */
     ui_status_bar_create(scr);
 
@@ -82,6 +86,24 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
         lv_obj_set_flex_align(app_grid, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
         lv_obj_set_style_pad_row(app_grid, 20, 0);
         lv_obj_set_style_pad_column(app_grid, 20, 0);
+=======
+    /* 创建标题标签 */
+    lv_obj_t *title = lv_label_create(scr);
+    if(title != NULL)
+    {
+        lv_label_set_text(title, "LVGL Image Demo");
+        lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+        lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+    }
+
+    /* 创建带图标的按钮1 - Home */
+    lv_obj_t *btn1 = lv_button_create(scr);
+    if(btn1 != NULL)
+    {
+        lv_obj_set_size(btn1, 120, 50);
+        lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
+        lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, NULL);
+>>>>>>> Stashed changes
 
         /* 创建应用图标 */
         for(uint8_t i = 0; i < APP_COUNT; i++)
