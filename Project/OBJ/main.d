@@ -280,5 +280,8 @@
 .\obj\main.o: ..\LVGL\src/lv_api_map_v9_2.h
 .\obj\main.o: ..\LVGL\src/lv_api_map_v9_3.h
 .\obj\main.o: ..\LVGL\src/lv_api_map_v9_4.h
+.\obj\main.o: ..\SEGGER_RTT\SEGGER_RTT.h
+.\obj\main.o: ..\SEGGER_RTT\RTT/SEGGER_RTT.h
+.\obj\main.o: ..\SEGGER_RTT\RTT/SEGGER_RTT_Conf.h
 .\obj\main.o: D:\k5\ARM\ARMCC\Bin\..\include\string.h
 .\obj\main.o: D:\k5\ARM\ARMCC\Bin\..\include\stdio.h

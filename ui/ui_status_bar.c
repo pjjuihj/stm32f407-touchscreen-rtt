@@ -75,11 +75,16 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
 static void status_bar_gesture_cb(lv_event_t * e)
 {
     lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+    LV_LOG_USER("Gesture detected, direction: %d", dir);
 
     /* 检测下拉手势 */
     if(dir == LV_DIR_BOTTOM)
     {
         LV_LOG_USER("Status bar pulled down, showing notification center");
         ui_notification_show();
+    }
+    else
+    {
+        LV_LOG_USER("Not a bottom gesture, direction: %d", dir);
     }
 }
