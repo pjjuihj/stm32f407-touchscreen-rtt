@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 /* 回调函数 */
-static void status_bar_click_cb(lv_event_t * e);
+static void status_bar_gesture_cb(lv_event_t * e);
 
 /**
  * @brief 创建状态栏组件
@@ -24,8 +24,8 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     lv_obj_set_style_border_width(status_bar, 0, 0);
     lv_obj_set_style_pad_all(status_bar, 5, 0);
 
-    /* 添加点击事件，用于打开通知中心 */
-    lv_obj_add_event_cb(status_bar, status_bar_click_cb, LV_EVENT_CLICKED, NULL);
+    /* 添加手势事件，用于检测下拉手势 */
+    lv_obj_add_event_cb(status_bar, status_bar_gesture_cb, LV_EVENT_GESTURE, NULL);
 
     /* 创建时间标签 */
     lv_obj_t * time_label = lv_label_create(status_bar);
@@ -67,11 +67,16 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
 }
 
 /**
- * @brief 状态栏点击回调，打开通知中心
+ * @brief 状态栏手势回调，检测下拉手势并打开通知中心
  */
-static void status_bar_click_cb(lv_event_t * e)
+static void status_bar_gesture_cb(lv_event_t * e)
 {
-    LV_UNUSED(e);
-    LV_LOG_USER("Status bar clicked, showing notification center");
-    ui_notification_show();
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+
+    /* 检测下拉手势 */
+    if(dir == LV_DIR_BOTTOM)
+    {
+        LV_LOG_USER("Status bar pulled down, showing notification center");
+        ui_notification_show();
+    }
 }
