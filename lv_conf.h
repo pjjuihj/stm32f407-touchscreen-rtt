@@ -37,8 +37,8 @@
  *===========================================================================*/
 #define LV_USE_LOG             1
 #if LV_USE_LOG
-    #define LV_LOG_LEVEL        LV_LOG_LEVEL_TRACE
-    #define LV_LOG_PRINTF       1
+    #define LV_LOG_LEVEL        LV_LOG_LEVEL_WARN  // WARN 级别
+    #define LV_LOG_PRINTF       0     // 使用自定义回调
 #endif
 
 /*===========================================================================
