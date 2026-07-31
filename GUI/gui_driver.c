@@ -67,6 +67,89 @@ static uint16_t ring_buf_count(ring_buf_t *ring)
 }
 
 /*===========================================================================
+ * DMA 调度器
+ *===========================================================================*/
+
+/**
+ * @brief DMA 发送状态
+ */
+typedef enum {
+    DMA_IDLE = 0,               // 空闲，可启动新传输
+    DMA_TX_LVGL,                // 正在发送 LVGL 日志
+    DMA_TX_CUSTOM,              // 正在发送自定义日志
+} dma_state_t;
+
+/**
+ * @brief DMA 调度器上下文
+ */
+typedef struct {
+    dma_state_t state;          // 当前状态
+    uint8_t tx_buf[256];        // DMA 发送缓冲区
+    uint16_t tx_len;            // 当前发送长度
+} dma_scheduler_t;
+
+// LVGL 日志缓冲区
+static char lvgl_log_buf[1024];
+static ring_buf_t lvgl_ring = {
+    .head = 0, .tail = 0, .count = 0,
+    .size = 1024, .buf = lvgl_log_buf
+};
+
+// 自定义日志缓冲区
+static char custom_log_buf[1024];
+static ring_buf_t custom_ring = {
+    .head = 0, .tail = 0, .count = 0,
+    .size = 1024, .buf = custom_log_buf
+};
+
+// DMA 调度器
+static dma_scheduler_t dma_scheduler = {
+    .state = DMA_IDLE,
+    .tx_len = 0
+};
+
+/**
+ * @brief 从环形缓冲区填充 DMA 发送缓冲区
+ * @return 实际填充的字节数
+ */
+static uint16_t fill_dma_buf(ring_buf_t *ring, uint16_t max_len)
+{
+    uint16_t len = 0;
+    int c;
+
+    while(len < max_len && (c = ring_buf_get(ring)) != -1) {
+        dma_scheduler.tx_buf[len++] = (uint8_t)c;
+    }
+
+    return len;
+}
+
+/**
+ * @brief DMA 调度器 - 主循环调用
+ */
+static void dma_scheduler_run(void)
+{
+    // 如果 DMA 正忙，直接返回
+    if(dma_scheduler.state != DMA_IDLE) return;
+
+    // 优先检查 LVGL 缓冲区
+    if(ring_buf_count(&lvgl_ring) > 0) {
+        dma_scheduler.tx_len = fill_dma_buf(&lvgl_ring, sizeof(dma_scheduler.tx_buf));
+        dma_scheduler.state = DMA_TX_LVGL;
+        HAL_UART_Transmit_DMA(&huart1, dma_scheduler.tx_buf, dma_scheduler.tx_len);
+        return;
+    }
+
+    // LVGL 无数据，检查自定义缓冲区
+    if(ring_buf_count(&custom_ring) > 0) {
+        dma_scheduler.tx_len = fill_dma_buf(&custom_ring, sizeof(dma_scheduler.tx_buf));
+        dma_scheduler.state = DMA_TX_CUSTOM;
+        HAL_UART_Transmit_DMA(&huart1, dma_scheduler.tx_buf, dma_scheduler.tx_len);
+        return;
+    }
+}
+
+/*===========================================================================
  * 显示驱动配置
  *===========================================================================*/
 
