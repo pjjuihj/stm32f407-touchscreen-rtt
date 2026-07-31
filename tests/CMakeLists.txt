@@ -15,6 +15,9 @@ set(CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 # 测试源文件
 set(TEST_SOURCES
     test_status_bar.c
+    test_bottom_nav.c
+    test_notification.c
+    test_main.c
 )
 
 # 创建测试可执行文件

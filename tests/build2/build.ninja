@@ -55,6 +55,39 @@ build CMakeFiles/lvgl_tests.dir/test_status_bar.c.obj: C_COMPILER__lvgl_tests_un
   TARGET_PDB = lvgl_tests.pdb
   TARGET_SUPPORT_DIR = CMakeFiles\lvgl_tests.dir
 
+build CMakeFiles/lvgl_tests.dir/test_bottom_nav.c.obj: C_COMPILER__lvgl_tests_unscanned_ C$:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/test_bottom_nav.c || cmake_object_order_depends_target_lvgl_tests
+  DEFINES = -DLV_CONF_INCLUDE_SIMPLE -DLV_KCONFIG_IGNORE -DLV_LVGL_H_INCLUDE_SIMPLE
+  DEP_FILE = CMakeFiles\lvgl_tests.dir\test_bottom_nav.c.obj.d
+  FLAGS = -std=gnu11
+  INCLUDES = -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/../LVGL -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/.. -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/../ui -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/build2/lvgl -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL/examples -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL/demos
+  OBJECT_DIR = CMakeFiles\lvgl_tests.dir
+  OBJECT_FILE_DIR = CMakeFiles\lvgl_tests.dir
+  TARGET_COMPILE_PDB = CMakeFiles\lvgl_tests.dir\
+  TARGET_PDB = lvgl_tests.pdb
+  TARGET_SUPPORT_DIR = CMakeFiles\lvgl_tests.dir
+
+build CMakeFiles/lvgl_tests.dir/test_notification.c.obj: C_COMPILER__lvgl_tests_unscanned_ C$:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/test_notification.c || cmake_object_order_depends_target_lvgl_tests
+  DEFINES = -DLV_CONF_INCLUDE_SIMPLE -DLV_KCONFIG_IGNORE -DLV_LVGL_H_INCLUDE_SIMPLE
+  DEP_FILE = CMakeFiles\lvgl_tests.dir\test_notification.c.obj.d
+  FLAGS = -std=gnu11
+  INCLUDES = -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/../LVGL -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/.. -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/../ui -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/build2/lvgl -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL/examples -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL/demos
+  OBJECT_DIR = CMakeFiles\lvgl_tests.dir
+  OBJECT_FILE_DIR = CMakeFiles\lvgl_tests.dir
+  TARGET_COMPILE_PDB = CMakeFiles\lvgl_tests.dir\
+  TARGET_PDB = lvgl_tests.pdb
+  TARGET_SUPPORT_DIR = CMakeFiles\lvgl_tests.dir
+
+build CMakeFiles/lvgl_tests.dir/test_main.c.obj: C_COMPILER__lvgl_tests_unscanned_ C$:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/test_main.c || cmake_object_order_depends_target_lvgl_tests
+  DEFINES = -DLV_CONF_INCLUDE_SIMPLE -DLV_KCONFIG_IGNORE -DLV_LVGL_H_INCLUDE_SIMPLE
+  DEP_FILE = CMakeFiles\lvgl_tests.dir\test_main.c.obj.d
+  FLAGS = -std=gnu11
+  INCLUDES = -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/../LVGL -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/.. -IC:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/../ui -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/tests/build2/lvgl -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL/examples -isystem C:/Users/CMJ/Desktop/TEST/触摸屏_usart/LVGL/demos
+  OBJECT_DIR = CMakeFiles\lvgl_tests.dir
+  OBJECT_FILE_DIR = CMakeFiles\lvgl_tests.dir
+  TARGET_COMPILE_PDB = CMakeFiles\lvgl_tests.dir\
+  TARGET_PDB = lvgl_tests.pdb
+  TARGET_SUPPORT_DIR = CMakeFiles\lvgl_tests.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target lvgl_tests
@@ -63,7 +96,7 @@ build CMakeFiles/lvgl_tests.dir/test_status_bar.c.obj: C_COMPILER__lvgl_tests_un
 #############################################
 # Link the executable lvgl_tests.exe
 
-build lvgl_tests.exe: C_EXECUTABLE_LINKER__lvgl_tests_ CMakeFiles/lvgl_tests.dir/test_status_bar.c.obj | lvgl/lib/liblvgl.a lvgl/lib/liblvgl_thorvg.a lvgl/lib/liblvgl_examples.a lvgl/lib/liblvgl_demos.a lvgl/lib/liblvgl.a lvgl/lib/liblvgl_thorvg.a lvgl/lib/liblvgl_examples.a lvgl/lib/liblvgl_demos.a || lvgl/lib/liblvgl.a
+build lvgl_tests.exe: C_EXECUTABLE_LINKER__lvgl_tests_ CMakeFiles/lvgl_tests.dir/test_status_bar.c.obj CMakeFiles/lvgl_tests.dir/test_bottom_nav.c.obj CMakeFiles/lvgl_tests.dir/test_notification.c.obj CMakeFiles/lvgl_tests.dir/test_main.c.obj | lvgl/lib/liblvgl.a lvgl/lib/liblvgl_thorvg.a lvgl/lib/liblvgl_examples.a lvgl/lib/liblvgl_demos.a lvgl/lib/liblvgl.a lvgl/lib/liblvgl_thorvg.a lvgl/lib/liblvgl_examples.a lvgl/lib/liblvgl_demos.a || lvgl/lib/liblvgl.a
   LINK_LIBRARIES = lvgl/lib/liblvgl.a  lvgl/lib/liblvgl_thorvg.a  lvgl/lib/liblvgl_examples.a  lvgl/lib/liblvgl_demos.a  lvgl/lib/liblvgl.a  lvgl/lib/liblvgl_thorvg.a  lvgl/lib/liblvgl_examples.a  lvgl/lib/liblvgl_demos.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\lvgl_tests.dir
   POST_BUILD = cd .
