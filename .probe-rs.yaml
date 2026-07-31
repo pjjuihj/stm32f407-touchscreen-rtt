@@ -1,0 +1,9 @@
+probe:
+  name: "CMSIS-DAP"
+  selector:
+    vid: "0x0483"
+    pid: "0x572a"
+  speed: 4000
+  protocol: "swd"
+
+chip: "STM32F407ZG"

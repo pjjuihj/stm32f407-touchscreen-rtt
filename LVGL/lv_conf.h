@@ -114,6 +114,7 @@
 /*===========================================================================
  * 字体配置
  *===========================================================================*/
+#define LV_FONT_MONTSERRAT_12   1
 #define LV_FONT_MONTSERRAT_14   1
 #define LV_FONT_MONTSERRAT_16   1
 #define LV_FONT_FMT_TXT_LARGE  0

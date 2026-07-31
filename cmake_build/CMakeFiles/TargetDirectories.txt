@@ -1,0 +1,14 @@
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/TOUCH.elf.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/edit_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/rebuild_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/list_install_components.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/install.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/install/local.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/CMakeFiles/install/strip.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/lvgl.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/edit_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/rebuild_cache.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/list_install_components.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/install.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/install/local.dir
+C:/Users/CMJ/Desktop/TEST/触摸屏_usart/cmake_build/LVGL/CMakeFiles/install/strip.dir

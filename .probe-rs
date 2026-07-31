@@ -1,0 +1,5 @@
+[probe]
+probe = "CMSIS-DAP"
+chip = "STM32F401CCUx"
+speed = 4000
+protocol = "Swd"
