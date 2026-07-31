@@ -12,6 +12,61 @@
 #include <stdio.h>
 
 /*===========================================================================
+ * 环形缓冲区结构
+ *===========================================================================*/
+
+/**
+ * @brief 通用环形缓冲区结构
+ */
+typedef struct {
+    volatile uint16_t head;     // 写入位置
+    volatile uint16_t tail;     // 读取位置
+    volatile uint16_t count;    // 当前数据量
+    uint16_t size;              // 缓冲区总大小
+    char *buf;                  // 数据存储区
+} ring_buf_t;
+
+/**
+ * @brief 写入单个字符到环形缓冲区（中断安全）
+ */
+static void ring_buf_put(ring_buf_t *ring, char c)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    if(ring->count < ring->size) {
+        ring->buf[ring->head] = c;
+        ring->head = (ring->head + 1) % ring->size;
+        ring->count++;
+    }
+    // 缓冲区满时丢弃字符
+
+    __set_PRIMASK(primask);
+}
+
+/**
+ * @brief 从环形缓冲区读取单个字符
+ * @return 读取的字符，缓冲区空返回 -1
+ */
+static int ring_buf_get(ring_buf_t *ring)
+{
+    if(ring->count == 0) return -1;
+
+    char c = ring->buf[ring->tail];
+    ring->tail = (ring->tail + 1) % ring->size;
+    ring->count--;
+    return c;
+}
+
+/**
+ * @brief 获取环形缓冲区中的数据量
+ */
+static uint16_t ring_buf_count(ring_buf_t *ring)
+{
+    return ring->count;
+}
+
+/*===========================================================================
  * 显示驱动配置
  *===========================================================================*/
 
