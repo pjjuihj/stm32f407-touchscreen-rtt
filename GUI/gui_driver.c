@@ -46,16 +46,24 @@ static void ring_buf_put(ring_buf_t *ring, char c)
 }
 
 /**
- * @brief 从环形缓冲区读取单个字符
+ * @brief 从环形缓冲区读取单个字符（中断安全）
  * @return 读取的字符，缓冲区空返回 -1
  */
 static int ring_buf_get(ring_buf_t *ring)
 {
-    if(ring->count == 0) return -1;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    if(ring->count == 0) {
+        __set_PRIMASK(primask);
+        return -1;
+    }
 
     char c = ring->buf[ring->tail];
     ring->tail = (ring->tail + 1) % ring->size;
     ring->count--;
+
+    __set_PRIMASK(primask);
     return c;
 }
 
