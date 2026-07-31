@@ -38,4 +38,24 @@ void gui_log_flush(void);
  */
 void gui_log_write(const char *str);
 
+/**
+ * @brief 日志输出模式
+ */
+typedef enum {
+    LOG_OUTPUT_RTT = 0,     // RTT 输出
+    LOG_OUTPUT_UART = 1,    // UART 输出
+} log_output_mode_t;
+
+/**
+ * @brief 设置日志输出模式
+ * @param mode: LOG_OUTPUT_RTT 或 LOG_OUTPUT_UART
+ */
+void gui_log_set_output_mode(log_output_mode_t mode);
+
+/**
+ * @brief 获取当前日志输出模式
+ * @return 当前模式
+ */
+log_output_mode_t gui_log_get_output_mode(void);
+
 #endif /* __GUI_DRIVER_H */

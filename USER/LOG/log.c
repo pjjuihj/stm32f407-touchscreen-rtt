@@ -70,11 +70,14 @@ void Log_Write(LogModule module, LogLevel level, const char *fmt, ...)
              LogLevelNames[level],
              entry.message);
 
-    // 输出到 RTT 通道 1 (primary output)
-    SEGGER_RTT_WriteString(RTT_CHANNEL_APP, buf);
-
-    // 保留 UART 输出（可选，调试期间可取消注释）
-    // gui_log_write(buf);
+    // 根据模式选择输出方式
+    if (gui_log_get_output_mode() == LOG_OUTPUT_RTT) {
+        // RTT 输出
+        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, buf);
+    } else {
+        // UART 输出
+        USART1_SendString(buf);
+    }
 }
 
 // Set module log level
@@ -96,7 +99,15 @@ void Log_Enable(LogModule module, bool enable)
 // Dump all logs (limited to 20 entries max)
 void Log_Dump(void)
 {
-    SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "=== Log Dump ===\r\n");
+    // 根据模式选择输出方式
+    log_output_mode_t mode = gui_log_get_output_mode();
+
+    if (mode == LOG_OUTPUT_RTT) {
+        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "=== Log Dump ===\r\n");
+    } else {
+        USART1_SendString("=== Log Dump ===\r\n");
+    }
+
     uint16_t idx = g_logBuffer.tail;
     uint16_t count = g_logBuffer.count > 20 ? 20 : g_logBuffer.count;
     for (int i = 0; i < count; i++) {
@@ -107,13 +118,25 @@ void Log_Dump(void)
                  (unsigned long)e->timestamp,
                  LogLevelNames[e->level],
                  e->message);
-        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, buf);
+        if (mode == LOG_OUTPUT_RTT) {
+            SEGGER_RTT_WriteString(RTT_CHANNEL_APP, buf);
+        } else {
+            USART1_SendString(buf);
+        }
         idx = (idx + 1) % LOG_BUFFER_SIZE;
     }
     if (g_logBuffer.count > 20) {
-        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "... (showing last 20 entries)\r\n");
+        if (mode == LOG_OUTPUT_RTT) {
+            SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "... (showing last 20 entries)\r\n");
+        } else {
+            USART1_SendString("... (showing last 20 entries)\r\n");
+        }
     }
-    SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "=== End ===\r\n");
+    if (mode == LOG_OUTPUT_RTT) {
+        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "=== End ===\r\n");
+    } else {
+        USART1_SendString("=== End ===\r\n");
+    }
 }
 
 // Clear log buffer

@@ -9,6 +9,7 @@
 #include "gui_driver.h"     /* 新增: LVGL驱动接口 */
 #include "lvgl.h"           /* 新增: LVGL头文件 */
 #include "SEGGER_RTT.h"     /* SEGGER RTT debug output */
+#include "SEGGER_SYSVIEW.h" /* SEGGER SystemView */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -144,11 +145,19 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                     USART1_SendString("LEVEL <MOD> <1-4> - Set log level\r\n");
                     USART1_SendString("DUMP            - Dump all logs\r\n");
                     USART1_SendString("CLEAR           - Clear log buffer\r\n");
+                    USART1_SendString("LOGMODE RTT     - Switch log output to RTT\r\n");
+                    USART1_SendString("LOGMODE UART    - Switch log output to UART\r\n");
                     USART1_SendString("TEST RUN        - Run all tests\r\n");
                     USART1_SendString("TEST WRITE      - Test log write\r\n");
                     USART1_SendString("TEST OVERFLOW   - Test buffer overflow\r\n");
                     USART1_SendString("TEST CLEAR      - Clear test logs\r\n");
                     USART1_SendString("HELP            - Show this help\r\n");
+                } else if (strcmp(cmdBuffer, "LOGMODE RTT") == 0) {
+                    gui_log_set_output_mode(LOG_OUTPUT_RTT);
+                    USART1_SendString("\r\nLog output: RTT\r\n");
+                } else if (strcmp(cmdBuffer, "LOGMODE UART") == 0) {
+                    gui_log_set_output_mode(LOG_OUTPUT_UART);
+                    USART1_SendString("\r\nLog output: UART\r\n");
                 } else {
                     USART1_SendString("\r\nUnknown command. Type HELP.\r\n");
                 }
@@ -203,6 +212,10 @@ int main(void)
 
 	// Initialize SEGGER RTT for debug output (before any logging)
 	SEGGER_RTT_Init();
+
+	// Initialize SystemView for real-time analysis
+	SEGGER_SYSVIEW_Init();
+	SEGGER_SYSVIEW_Start();
 
 	// Initialize log system AFTER USART is ready
 	Log_Init();

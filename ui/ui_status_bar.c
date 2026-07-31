@@ -74,4 +74,5 @@ static void status_bar_click_cb(lv_event_t * e)
     LV_UNUSED(e);
     LV_LOG_USER("Status bar clicked, showing notification center");
     ui_notification_show();
+    LV_LOG_USER("Notification center shown");
 }

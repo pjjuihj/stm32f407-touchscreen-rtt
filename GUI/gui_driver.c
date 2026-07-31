@@ -284,27 +284,52 @@ void gui_tick_init(void)
 }
 
 /*===========================================================================
- * LVGL 日志回调 (SEGGER RTT)
+ * LVGL 日志回调 (支持 RTT/UART 切换)
  *===========================================================================*/
 
 // RTT channel for LVGL logs
 #define RTT_CHANNEL_LVGL   0
 
+// 当前日志输出模式（可通过命令切换）
+static volatile log_output_mode_t g_log_output_mode = LOG_OUTPUT_UART;
+
 /**
- * @brief LVGL 9.5 日志回调 - 通过 SEGGER RTT 输出
+ * @brief 设置日志输出模式
+ * @param mode: LOG_OUTPUT_RTT 或 LOG_OUTPUT_UART
+ */
+void gui_log_set_output_mode(log_output_mode_t mode)
+{
+    g_log_output_mode = mode;
+}
+
+/**
+ * @brief 获取当前日志输出模式
+ * @return 当前模式
+ */
+log_output_mode_t gui_log_get_output_mode(void)
+{
+    return g_log_output_mode;
+}
+
+/**
+ * @brief LVGL 9.5 日志回调 - 支持 RTT/UART 切换
  *
  * LVGL 已经格式化了完整的日志消息（包含级别前缀），
- * 直接写入 RTT 通道 0，无需额外处理。
- * RTT 是非阻塞的，可在中断/临界区中安全调用。
+ * 根据 g_log_output_mode 选择输出方式。
  */
 static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
 {
     (void)level;  // LVGL 已在 buf 中包含级别前缀
 
-    // LVGL 已经格式化了完整的日志消息
-    // 直接写入 RTT 通道 0，不添加任何前缀
-    SEGGER_RTT_WriteString(RTT_CHANNEL_LVGL, buf);
-    SEGGER_RTT_WriteString(RTT_CHANNEL_LVGL, "\n");
+    if (g_log_output_mode == LOG_OUTPUT_RTT) {
+        // RTT 输出（非阻塞，适合中断上下文）
+        SEGGER_RTT_WriteString(RTT_CHANNEL_LVGL, buf);
+        SEGGER_RTT_WriteString(RTT_CHANNEL_LVGL, "\n");
+    } else {
+        // UART 输出（阻塞，适合主循环）
+        USART1_SendString(buf);
+        USART1_SendString("\r\n");
+    }
 }
 
 /*===========================================================================

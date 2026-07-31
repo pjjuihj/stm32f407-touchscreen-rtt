@@ -39,6 +39,13 @@ static char _acUpBuffer0[SEGGER_RTT_BUFFER_SIZE_UP];
 static char _acUpBuffer1[SEGGER_RTT_BUFFER_SIZE_UP_CH1];
 
 /**
+ * @brief Up-buffer for Channel 2 (SystemView)
+ * Size is 256 bytes, suitable for SystemView events.
+ */
+#define SEGGER_RTT_BUFFER_SIZE_UP_CH2   256u
+static char _acUpBuffer2[SEGGER_RTT_BUFFER_SIZE_UP_CH2];
+
+/**
  * @brief Down-buffer for Channel 0 (host -> target, reserved)
  */
 static char _acDownBuffer0[SEGGER_RTT_BUFFER_SIZE_DOWN];
@@ -199,6 +206,14 @@ int SEGGER_RTT_Init(void) {
     _SEGGER_RTT.aUpBuffers[1].WrOff        = 0u;
     _SEGGER_RTT.aUpBuffers[1].RdOff        = 0u;
     _SEGGER_RTT.aUpBuffers[1].Flags        = SEGGER_RTT_MODE_NO_BLOCK_TRIM;
+
+    /* Initialize up-buffer 2: SystemView */
+    _SEGGER_RTT.aUpBuffers[2].sName        = "SystemView";
+    _SEGGER_RTT.aUpBuffers[2].pBuffer      = _acUpBuffer2;
+    _SEGGER_RTT.aUpBuffers[2].SizeOfBuffer = sizeof(_acUpBuffer2);
+    _SEGGER_RTT.aUpBuffers[2].WrOff        = 0u;
+    _SEGGER_RTT.aUpBuffers[2].RdOff        = 0u;
+    _SEGGER_RTT.aUpBuffers[2].Flags        = SEGGER_RTT_MODE_NO_BLOCK_TRIM;
 
     /* Initialize down-buffer 0: Reserved */
     _SEGGER_RTT.aDownBuffers[0].sName        = "Terminal";

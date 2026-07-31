@@ -27,8 +27,9 @@ extern "C" {
  * Number of up-buffers (target -> host) available.
  * Channel 0: LVGL logs (1024 bytes)
  * Channel 1: App logs (512 bytes)
+ * Channel 2: SystemView (256 bytes)
  */
-#define SEGGER_RTT_MAX_NUM_UP_BUFFERS       2
+#define SEGGER_RTT_MAX_NUM_UP_BUFFERS       3
 
 /**
  * Number of down-buffers (host -> target) available.
