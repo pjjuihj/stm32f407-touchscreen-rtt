@@ -272,32 +272,56 @@ void gui_tick_init(void)
 }
 
 /*===========================================================================
- * 日志功能配置
+ * LVGL 日志回调
  *===========================================================================*/
 
-#if LV_USE_LOG
 /**
- * @brief LVGL日志回调 - 通过USART1输出
+ * @brief LVGL 9.5 日志回调 - 仅写入 LVGL 缓冲区
+ *
+ * 使用环形缓冲区代替直接调用 USART1_SendString，
+ * 避免 LVGL 在临界区/中断上下文中调用时导致死锁或 HardFault。
+ * 缓冲区数据由 DMA 调度器在主循环中异步发送。
  */
 static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
 {
+    // 递归保护
+    static volatile bool in_log_cb = false;
+    if(in_log_cb) return;
+    in_log_cb = true;
+
+    // 日志级别前缀
     const char *prefix;
     switch(level) {
-        case LV_LOG_LEVEL_TRACE: prefix = "[TRACE] "; break;
-        case LV_LOG_LEVEL_INFO:  prefix = "[INFO]  "; break;
-        case LV_LOG_LEVEL_WARN:  prefix = "[WARN]  "; break;
-        case LV_LOG_LEVEL_ERROR: prefix = "[ERROR] "; break;
-        case LV_LOG_LEVEL_USER:  prefix = "[USER]  "; break;
-        default:                 prefix = "[???]   "; break;
+        case LV_LOG_LEVEL_TRACE: prefix = "[T] "; break;
+        case LV_LOG_LEVEL_INFO:  prefix = "[I] "; break;
+        case LV_LOG_LEVEL_WARN:  prefix = "[W] "; break;
+        case LV_LOG_LEVEL_ERROR: prefix = "[E] "; break;
+        case LV_LOG_LEVEL_USER:  prefix = "[U] "; break;
+        default:                 prefix = "[?] "; break;
     }
-    USART1_SendString(prefix);
-    USART1_SendString(buf);
-    USART1_SendString("\r\n");
+
+    // 写入前缀
+    for(const char *p = prefix; *p; p++) {
+        ring_buf_put(&lvgl_ring, *p);
+    }
+
+    // 写入日志内容
+    for(const char *p = buf; *p; p++) {
+        ring_buf_put(&lvgl_ring, *p);
+    }
+
+    // 换行符
+    ring_buf_put(&lvgl_ring, '\r');
+    ring_buf_put(&lvgl_ring, '\n');
+
+    in_log_cb = false;
 }
-#endif
 
 /**
  * @brief 初始化日志功能
+ *
+ * 注册 LVGL 日志回调，日志写入环形缓冲区后由 DMA 调度器异步发送。
+ * 需要在 lv_init() 之后调用。
  */
 void gui_log_init(void)
 {
@@ -308,8 +332,11 @@ void gui_log_init(void)
 
 /**
  * @brief 主循环中调用 - 保留接口兼容
+ *
+ * LVGL日志已通过环形缓冲区 + DMA调度器异步发送，
+ * 此函数保留为接口兼容，无需额外操作。
  */
 void gui_log_flush(void)
 {
-    /* LVGL日志已通过回调直接发送 */
+    /* DMA 调度器在主循环中自动处理 */
 }
