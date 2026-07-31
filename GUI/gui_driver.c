@@ -364,3 +364,36 @@ void gui_log_write(const char *str)
         ring_buf_put(&custom_ring, *p);
     }
 }
+
+/*===========================================================================
+ * DMA 回调
+ *===========================================================================*/
+
+/**
+ * @brief UART DMA 发送完成回调
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance != USART1) return;
+
+    dma_scheduler.state = DMA_IDLE;
+    dma_scheduler.tx_len = 0;
+
+    // 立即检查是否有更多数据要发送
+    dma_scheduler_run();
+}
+
+/**
+ * @brief UART 错误回调
+ */
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance != USART1) return;
+
+    // 清除错误标志
+    __HAL_UART_CLEAR_PEFLAG(huart);
+
+    // 重置 DMA 状态
+    dma_scheduler.state = DMA_IDLE;
+    dma_scheduler.tx_len = 0;
+}
