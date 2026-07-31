@@ -153,6 +153,10 @@ void ui_notification_show(void)
     LV_LOG_USER("ui_notification_show called, notification_panel: %p", notification_panel);
     if(notification_panel != NULL)
     {
+        /* 设置通知面板位置和大小 */
+        lv_obj_set_pos(notification_panel, 0, 0);
+        lv_obj_set_size(notification_panel, LV_PCT(100), LV_PCT(100));
+
         /* 移到最上层 */
         lv_obj_move_foreground(notification_panel);
         /* 显示通知面板 */
