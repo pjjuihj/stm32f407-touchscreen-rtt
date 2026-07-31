@@ -9,11 +9,13 @@
 #include "xpt2046.h"
 #include "usart.h"
 #include "stm32f4xx_hal.h"
+#include "SEGGER_RTT.h"
 #include <stdio.h>
 #include <string.h>
 
 /*===========================================================================
- * 环形缓冲区结构
+ * [DEPRECATED] 环形缓冲区结构 - 已被 SEGGER RTT 替代
+ * 以下代码保留用于自定义日志和向后兼容，LVGL 日志已迁移到 RTT
  *===========================================================================*/
 
 /**
@@ -76,7 +78,8 @@ static uint16_t ring_buf_count(ring_buf_t *ring)
 }
 
 /*===========================================================================
- * DMA 调度器
+ * [DEPRECATED] DMA 调度器 - LVGL 日志已迁移到 SEGGER RTT
+ * 以下代码保留用于自定义日志和向后兼容
  *===========================================================================*/
 
 /**
@@ -281,49 +284,27 @@ void gui_tick_init(void)
 }
 
 /*===========================================================================
- * LVGL 日志回调
+ * LVGL 日志回调 (SEGGER RTT)
  *===========================================================================*/
 
+// RTT channel for LVGL logs
+#define RTT_CHANNEL_LVGL   0
+
 /**
- * @brief LVGL 9.5 日志回调 - 仅写入 LVGL 缓冲区
+ * @brief LVGL 9.5 日志回调 - 通过 SEGGER RTT 输出
  *
- * 使用环形缓冲区代替直接调用 USART1_SendString，
- * 避免 LVGL 在临界区/中断上下文中调用时导致死锁或 HardFault。
- * 缓冲区数据由 DMA 调度器在主循环中异步发送。
+ * LVGL 已经格式化了完整的日志消息（包含级别前缀），
+ * 直接写入 RTT 通道 0，无需额外处理。
+ * RTT 是非阻塞的，可在中断/临界区中安全调用。
  */
 static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
 {
-    // 递归保护
-    static volatile bool in_log_cb = false;
-    if(in_log_cb) return;
-    in_log_cb = true;
+    (void)level;  // LVGL 已在 buf 中包含级别前缀
 
-    // 日志级别前缀
-    const char *prefix;
-    switch(level) {
-        case LV_LOG_LEVEL_TRACE: prefix = "[T] "; break;
-        case LV_LOG_LEVEL_INFO:  prefix = "[I] "; break;
-        case LV_LOG_LEVEL_WARN:  prefix = "[W] "; break;
-        case LV_LOG_LEVEL_ERROR: prefix = "[E] "; break;
-        case LV_LOG_LEVEL_USER:  prefix = "[U] "; break;
-        default:                 prefix = "[?] "; break;
-    }
-
-    // 写入前缀
-    for(const char *p = prefix; *p; p++) {
-        ring_buf_put(&lvgl_ring, *p);
-    }
-
-    // 写入日志内容
-    for(const char *p = buf; *p; p++) {
-        ring_buf_put(&lvgl_ring, *p);
-    }
-
-    // 换行符
-    ring_buf_put(&lvgl_ring, '\r');
-    ring_buf_put(&lvgl_ring, '\n');
-
-    in_log_cb = false;
+    // LVGL 已经格式化了完整的日志消息
+    // 直接写入 RTT 通道 0，不添加任何前缀
+    SEGGER_RTT_WriteString(RTT_CHANNEL_LVGL, buf);
+    SEGGER_RTT_WriteString(RTT_CHANNEL_LVGL, "\n");
 }
 
 /*===========================================================================

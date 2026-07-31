@@ -1,47 +1,34 @@
 /**
  * @file SEGGER_RTT.h
- * @brief SEGGER Real-Time Transfer (RTT) header
+ * @brief Public header for SEGGER RTT library
+ *
+ * This is a convenience header that includes the core RTT header.
+ * Include this file in your application code to use RTT functions.
+ *
+ * Usage:
+ *   #include "SEGGER_RTT.h"
+ *
+ *   // Initialize RTT (once, early in main)
+ *   SEGGER_RTT_Init();
+ *
+ *   // Write logs
+ *   SEGGER_RTT_WriteString(0, "Hello from LVGL!\n");
+ *   SEGGER_RTT_WriteString(1, "Hello from App!\n");
+ *
+ * Channel assignments:
+ *   Channel 0: LVGL logs (1024 bytes buffer)
+ *   Channel 1: App logs (512 bytes buffer)
  */
 
-#ifndef SEGGER_RTT_H
-#define SEGGER_RTT_H
+#ifndef SEGGER_RTT_PUBLIC_H
+#define SEGGER_RTT_PUBLIC_H
 
-#include <stdint.h>
+#include "RTT/SEGGER_RTT.h"
 
 /**
- * @brief Initialize RTT control block
+ * @brief Channel index definitions for readability
  */
-void SEGGER_RTT_Init(void);
+#define RTT_CHANNEL_LVGL    0   /* LVGL log channel */
+#define RTT_CHANNEL_APP     1   /* Application log channel */
 
-/**
- * @brief Write string to RTT channel 0
- * @param s String to write
- * @return Number of bytes written
- */
-unsigned SEGGER_RTT_WriteString(unsigned bufferIndex, const char *s);
-
-/**
- * @brief Write data to RTT channel
- * @param bufferIndex Channel index
- * @param pBuffer Data to write
- * @param NumBytes Number of bytes
- * @return Number of bytes written
- */
-unsigned SEGGER_RTT_Write(unsigned bufferIndex, const void *pBuffer, unsigned NumBytes);
-
-/**
- * @brief Write character to RTT channel 0
- * @param c Character to write
- * @return Character written
- */
-int SEGGER_RTT_PutChar(unsigned bufferIndex, char c);
-
-/**
- * @brief printf-style output to RTT
- * @param bufferIndex Channel index
- * @param fmt Format string
- * @return Number of characters written
- */
-int SEGGER_RTT_printf(unsigned bufferIndex, const char *fmt, ...);
-
-#endif /* SEGGER_RTT_H */
+#endif /* SEGGER_RTT_PUBLIC_H */

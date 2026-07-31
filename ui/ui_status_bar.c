@@ -24,6 +24,9 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     lv_obj_set_style_border_width(status_bar, 0, 0);
     lv_obj_set_style_pad_all(status_bar, 5, 0);
 
+    /* 启用手势检测 */
+    lv_obj_add_flag(status_bar, LV_OBJ_FLAG_GESTURE_BUBBLE);
+
     /* 添加手势事件，用于检测下拉手势 */
     lv_obj_add_event_cb(status_bar, status_bar_gesture_cb, LV_EVENT_GESTURE, NULL);
 

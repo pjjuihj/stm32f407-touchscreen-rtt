@@ -1,9 +1,12 @@
 #include "log.h"
 #include "usart.h"
 #include "gui_driver.h"
+#include "SEGGER_RTT.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+
+#define RTT_CHANNEL_APP  1
 
 // Module/Level name tables
 const char *LogModuleNames[LOG_MODULE_MAX] = {
@@ -59,14 +62,19 @@ void Log_Write(LogModule module, LogLevel level, const char *fmt, ...)
     g_logBuffer.head = (g_logBuffer.head + 1) % LOG_BUFFER_SIZE;
     g_logBuffer.count++;
 
-    // Output via USART
+    // Format log message with module name and level
     char buf[128];
     snprintf(buf, sizeof(buf), "[%s][%09lums][%s] %s\r\n",
              LogModuleNames[module],
              (unsigned long)entry.timestamp,
              LogLevelNames[level],
              entry.message);
-    gui_log_write(buf);
+
+    // 输出到 RTT 通道 1 (primary output)
+    SEGGER_RTT_WriteString(RTT_CHANNEL_APP, buf);
+
+    // 保留 UART 输出（可选，调试期间可取消注释）
+    // gui_log_write(buf);
 }
 
 // Set module log level
@@ -88,7 +96,7 @@ void Log_Enable(LogModule module, bool enable)
 // Dump all logs (limited to 20 entries max)
 void Log_Dump(void)
 {
-    USART1_SendString("=== Log Dump ===\r\n");
+    SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "=== Log Dump ===\r\n");
     uint16_t idx = g_logBuffer.tail;
     uint16_t count = g_logBuffer.count > 20 ? 20 : g_logBuffer.count;
     for (int i = 0; i < count; i++) {
@@ -99,13 +107,13 @@ void Log_Dump(void)
                  (unsigned long)e->timestamp,
                  LogLevelNames[e->level],
                  e->message);
-        USART1_SendString(buf);
+        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, buf);
         idx = (idx + 1) % LOG_BUFFER_SIZE;
     }
     if (g_logBuffer.count > 20) {
-        USART1_SendString("... (showing last 20 entries)\r\n");
+        SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "... (showing last 20 entries)\r\n");
     }
-    USART1_SendString("=== End ===\r\n");
+    SEGGER_RTT_WriteString(RTT_CHANNEL_APP, "=== End ===\r\n");
 }
 
 // Clear log buffer

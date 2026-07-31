@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,LV_CONF_INCLUDE_SIMPLE</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Common;..\Main;..\Startup_config;..\STM32F4xx_HAL_Driver\inc;..\USER\LED;..\USER\LCD;..\USER\BEEP;..\USER\KEY;..\USER\LCD;..\USER\TOUCH;..\USER\USART;..\USER\LOG;..\TEST;..\LVGL;..\LVGL\src;..\LVGL\src\drivers\display\ili9341;..\LVGL\src\drivers\display\lcd;..\GUI</IncludePath>
+              <IncludePath>..\Common;..\Main;..\Startup_config;..\STM32F4xx_HAL_Driver\inc;..\USER\LED;..\USER\LCD;..\USER\BEEP;..\USER\KEY;..\USER\LCD;..\USER\TOUCH;..\USER\USART;..\USER\LOG;..\TEST;..\LVGL;..\LVGL\src;..\LVGL\src\drivers\display\ili9341;..\LVGL\src\drivers\display\lcd;..\GUI;..\SEGGER_RTT;..\SEGGER_RTT\RTT</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2543,6 +2543,16 @@
               <FileName>lv_os.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\LVGL\src\osal\lv_os.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SEGGER_RTT</GroupName>
+          <Files>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SEGGER_RTT\RTT\SEGGER_RTT.c</FilePath>
             </File>
           </Files>
         </Group>

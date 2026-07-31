@@ -8,6 +8,7 @@
 #include "test_log.h"
 #include "gui_driver.h"     /* 新增: LVGL驱动接口 */
 #include "lvgl.h"           /* 新增: LVGL头文件 */
+#include "SEGGER_RTT.h"     /* SEGGER RTT debug output */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -199,6 +200,9 @@ int main(void)
 
 	// Enable USART1 receive interrupt
 	HAL_UART_Receive_IT(&huart1, &rxChar, 1);
+
+	// Initialize SEGGER RTT for debug output (before any logging)
+	SEGGER_RTT_Init();
 
 	// Initialize log system AFTER USART is ready
 	Log_Init();
