@@ -1,5 +1,6 @@
 #include "log.h"
 #include "usart.h"
+#include "gui_driver.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -65,7 +66,7 @@ void Log_Write(LogModule module, LogLevel level, const char *fmt, ...)
              (unsigned long)entry.timestamp,
              LogLevelNames[level],
              entry.message);
-    USART1_SendString(buf);
+    gui_log_write(buf);
 }
 
 // Set module log level
