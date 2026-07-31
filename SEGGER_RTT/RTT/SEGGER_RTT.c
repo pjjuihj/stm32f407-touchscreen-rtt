@@ -435,3 +435,5 @@ int SEGGER_RTT_ConfigUpBuffer(unsigned BufferIndex, const char* sName, void* pBu
 
     return 0;
 }
+// Force recompile
+

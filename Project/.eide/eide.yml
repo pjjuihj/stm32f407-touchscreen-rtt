@@ -17,7 +17,7 @@ virtualFolder:
       files:
         - path: ../Startup_config/system_stm32f4xx.c
         - path: ../Startup_config/stm32f4xx_hal_msp.c
-        - path: ../Startup_config/startup_stm32f407xx_gcc.s
+        - path: ../Startup_config/startup_stm32f407xx.s
         - path: ../Startup_config/cmsis_armcc.h
         - path: ../Startup_config/cmsis_armclang.h
         - path: ../Startup_config/cmsis_compiler.h
@@ -61,9 +61,21 @@ virtualFolder:
       files:
         - path: ../GUI/gui_driver.c
       folders: []
+    - name: SEGGER_RTT
+      files:
+        - path: ../SEGGER_RTT/RTT/SEGGER_RTT.c
+      folders: []
     - name: UI
       files:
         - path: ../ui/ui_main.c
+        - path: ../ui/ui_swipe.c
+        - path: ../ui/ui_bottom_nav.c
+        - path: ../ui/ui_data.c
+        - path: ../ui/ui_input.c
+        - path: ../ui/ui_selection.c
+        - path: ../ui/ui_display.c
+        - path: ../ui/ui_notification.c
+        - path: ../ui/ui_status_bar.c
       folders: []
     - name: LVGL
       files:
@@ -130,6 +142,7 @@ virtualFolder:
         - path: ../LVGL/src/font/lv_font_montserrat_14.c
         - path: ../LVGL/src/font/lv_font_montserrat_16.c
         - path: ../LVGL/src/font/lv_font_montserrat_20.c
+        - path: ../LVGL/src/font/lv_font_montserrat_12.c
         - path: ../LVGL/src/font/lv_font_montserrat_24.c
         - path: ../LVGL/src/font/binfont_loader/lv_binfont_loader.c
         - path: ../LVGL/src/font/fmt_txt/lv_font_fmt_txt.c
@@ -217,6 +230,11 @@ virtualFolder:
         - path: ../LVGL/src/widgets/tabview/lv_tabview.c
         - path: ../LVGL/src/widgets/textarea/lv_textarea.c
         - path: ../LVGL/src/widgets/tileview/lv_tileview.c
+        - path: ../LVGL/src/widgets/calendar/lv_calendar.c
+        - path: ../LVGL/src/widgets/calendar/lv_calendar_header_arrow.c
+        - path: ../LVGL/src/widgets/calendar/lv_calendar_header_dropdown.c
+        - path: ../LVGL/src/widgets/win/lv_win.c
+        - path: ../LVGL/src/draw/convert/lv_draw_buf_convert.c
         - path: ../LVGL/src/libs/bin_decoder/lv_bin_decoder.c
         - path: ../LVGL/src/osal/lv_os.c
       folders: []
@@ -255,13 +273,13 @@ targets:
         - ../LVGL/src/drivers/display/lcd
         - ../GUI
         - ../ui
-        - .cmsis/include
-        - RTE/_Target 1
+        - ../SEGGER_RTT
+        - ../SEGGER_RTT/RTT
       libList: []
     excludeList: []
     settings:
       debugger: cortex-debug
-    toolchain: GCC
+    toolchain: AC5
     toolchainConfigMap:
       AC5:
         archExtensions: ""
