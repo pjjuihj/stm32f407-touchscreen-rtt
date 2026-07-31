@@ -10,6 +10,7 @@
 #include "usart.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
+#include <string.h>
 
 /*===========================================================================
  * 环形缓冲区结构
@@ -317,26 +318,46 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
     in_log_cb = false;
 }
 
+/*===========================================================================
+ * 公共接口
+ *===========================================================================*/
+
 /**
- * @brief 初始化日志功能
- *
- * 注册 LVGL 日志回调，日志写入环形缓冲区后由 DMA 调度器异步发送。
- * 需要在 lv_init() 之后调用。
+ * @brief 初始化日志系统（必须在 lv_init 之前调用）
  */
 void gui_log_init(void)
 {
-#if LV_USE_LOG
+    // 清空 LVGL 环形缓冲区（仅重置操作字段，保留 size 和 buf）
+    lvgl_ring.head = 0;
+    lvgl_ring.tail = 0;
+    lvgl_ring.count = 0;
+
+    // 清空自定义环形缓冲区
+    custom_ring.head = 0;
+    custom_ring.tail = 0;
+    custom_ring.count = 0;
+
+    // 清空 DMA 调度器
+    memset(&dma_scheduler, 0, sizeof(dma_scheduler));
+
+    // 注册 LVGL 日志回调
     lv_log_register_print_cb(lv_log_print_g_cb);
-#endif
 }
 
 /**
- * @brief 主循环中调用 - 保留接口兼容
- *
- * LVGL日志已通过环形缓冲区 + DMA调度器异步发送，
- * 此函数保留为接口兼容，无需额外操作。
+ * @brief 主循环调用 - 调度 DMA 发送
  */
 void gui_log_flush(void)
 {
-    /* DMA 调度器在主循环中自动处理 */
+    dma_scheduler_run();
+}
+
+/**
+ * @brief 写入自定义日志
+ */
+void gui_log_write(const char *str)
+{
+    for(const char *p = str; *p; p++) {
+        ring_buf_put(&custom_ring, *p);
+    }
 }

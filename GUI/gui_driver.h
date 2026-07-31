@@ -33,4 +33,9 @@ void gui_log_init(void);
  */
 void gui_log_flush(void);
 
+/**
+ * @brief 写入自定义日志（供 Log_Write 调用）
+ */
+void gui_log_write(const char *str);
+
 #endif /* __GUI_DRIVER_H */
