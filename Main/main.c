@@ -9,7 +9,6 @@
 #include "gui_driver.h"     /* 新增: LVGL驱动接口 */
 #include "lvgl.h"           /* 新增: LVGL头文件 */
 #include "SEGGER_RTT.h"     /* SEGGER RTT debug output */
-#include "SEGGER_SYSVIEW.h" /* SEGGER SystemView */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -212,10 +211,6 @@ int main(void)
 
 	// Initialize SEGGER RTT for debug output (before any logging)
 	SEGGER_RTT_Init();
-
-	// Initialize SystemView for real-time analysis
-	SEGGER_SYSVIEW_Init();
-	SEGGER_SYSVIEW_Start();
 
 	// Initialize log system AFTER USART is ready
 	Log_Init();

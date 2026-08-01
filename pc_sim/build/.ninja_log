@@ -595,3 +595,5 @@
 33	277	8072105625228462	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_notification.c.obj	38e3eee4af45925b
 458	942	8072223113286116	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_status_bar.c.obj	f7da49774bd2c5fd
 50	295	8072223330152101	lvgl_pc_sim.exe	7b211c95b6fe8c89
+213	1268	8072610839704530	CMakeFiles/lvgl_pc_sim.dir/C_/Users/CMJ/Desktop/TEST/触摸屏_usart/ui/ui_status_bar.c.obj	f7da49774bd2c5fd
+52	530	8072611034075702	lvgl_pc_sim.exe	7b211c95b6fe8c89

@@ -24,6 +24,9 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     lv_obj_set_style_border_width(status_bar, 0, 0);
     lv_obj_set_style_pad_all(status_bar, 5, 0);
 
+    /* 确保状态栏可以接收点击事件 */
+    lv_obj_add_flag(status_bar, LV_OBJ_FLAG_CLICKABLE);
+
     /* 添加点击事件，用于打开通知中心 */
     lv_obj_add_event_cb(status_bar, status_bar_click_cb, LV_EVENT_CLICKED, NULL);
 
