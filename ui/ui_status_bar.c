@@ -3,7 +3,11 @@
 #include <stdio.h>
 
 /* 回调函数 */
-static void status_bar_click_cb(lv_event_t * e);
+static void status_bar_press_cb(lv_event_t * e);
+static void status_bar_release_cb(lv_event_t * e);
+
+/* 静态变量 */
+static lv_coord_t press_y = 0;
 
 /**
  * @brief 创建状态栏组件
@@ -27,8 +31,9 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
     /* 确保状态栏可以接收点击事件 */
     lv_obj_add_flag(status_bar, LV_OBJ_FLAG_CLICKABLE);
 
-    /* 添加点击事件，用于打开通知中心 */
-    lv_obj_add_event_cb(status_bar, status_bar_click_cb, LV_EVENT_CLICKED, NULL);
+    /* 添加按下和释放事件，用于检测下拉手势 */
+    lv_obj_add_event_cb(status_bar, status_bar_press_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(status_bar, status_bar_release_cb, LV_EVENT_RELEASED, NULL);
 
     /* 创建时间标签 */
     lv_obj_t * time_label = lv_label_create(status_bar);
@@ -70,12 +75,41 @@ lv_obj_t * ui_status_bar_create(lv_obj_t * parent)
 }
 
 /**
- * @brief 状态栏点击回调，打开通知中心
+ * @brief 状态栏按下回调，记录按下位置
  */
-static void status_bar_click_cb(lv_event_t * e)
+static void status_bar_press_cb(lv_event_t * e)
 {
-    LV_UNUSED(e);
-    LV_LOG_USER("Status bar clicked, showing notification center");
-    ui_notification_show();
-    LV_LOG_USER("Notification center shown");
+    lv_indev_t * indev = lv_indev_get_act();
+    if(indev != NULL)
+    {
+        lv_point_t point;
+        lv_indev_get_point(indev, &point);
+        press_y = point.y;
+        LV_LOG_USER("Status bar pressed at y=%d", press_y);
+    }
+}
+
+/**
+ * @brief 状态栏释放回调，检测下拉手势
+ */
+static void status_bar_release_cb(lv_event_t * e)
+{
+    lv_indev_t * indev = lv_indev_get_act();
+    if(indev != NULL)
+    {
+        lv_point_t point;
+        lv_indev_get_point(indev, &point);
+        lv_coord_t release_y = point.y;
+
+        /* 计算垂直位移 */
+        lv_coord_t delta_y = release_y - press_y;
+        LV_LOG_USER("Status bar released at y=%d, delta_y=%d", release_y, delta_y);
+
+        /* 如果向下拖拽超过 20 像素，打开通知中心 */
+        if(delta_y > 20)
+        {
+            LV_LOG_USER("Pull-down detected, showing notification center");
+            ui_notification_show();
+        }
+    }
 }
