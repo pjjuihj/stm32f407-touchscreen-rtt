@@ -64,6 +64,7 @@ virtualFolder:
     - name: SEGGER_RTT
       files:
         - path: ../SEGGER_RTT/RTT/SEGGER_RTT.c
+        - path: ../SEGGER_RTT/Sys/SEGGER_SYSVIEW.c
       folders: []
     - name: UI
       files:
@@ -275,6 +276,7 @@ targets:
         - ../ui
         - ../SEGGER_RTT
         - ../SEGGER_RTT/RTT
+        - ../SEGGER_RTT/Sys
       libList: []
     excludeList: []
     settings:

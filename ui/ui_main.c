@@ -62,9 +62,6 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
 
-    /* 创建状态栏 */
-    ui_status_bar_create(scr);
-
     /* 创建应用图标网格 */
     lv_obj_t * app_grid = lv_obj_create(scr);
     if(app_grid != NULL)
@@ -132,6 +129,9 @@ lv_obj_t * ui_main_create(lv_obj_t * parent)
 
     /* 创建通知中心 */
     ui_notification_create(scr);
+
+    /* 创建状态栏（放在最后，确保在最上层） */
+    ui_status_bar_create(scr);
 
     return scr;
 }
