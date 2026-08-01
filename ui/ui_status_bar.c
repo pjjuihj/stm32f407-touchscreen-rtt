@@ -87,6 +87,10 @@ static void status_bar_press_cb(lv_event_t * e)
         press_y = point.y;
         LV_LOG_USER("Status bar pressed at y=%d", press_y);
     }
+    else
+    {
+        LV_LOG_ERROR("indev is NULL in press callback");
+    }
 }
 
 /**
@@ -111,5 +115,13 @@ static void status_bar_release_cb(lv_event_t * e)
             LV_LOG_USER("Pull-down detected, showing notification center");
             ui_notification_show();
         }
+        else
+        {
+            LV_LOG_USER("Not a pull-down, delta_y=%d", delta_y);
+        }
+    }
+    else
+    {
+        LV_LOG_ERROR("indev is NULL in release callback");
     }
 }
