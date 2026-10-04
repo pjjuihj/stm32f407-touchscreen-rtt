@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a change to the firmware or workflow
+title: "[Feature] "
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and desired outcome
+      description: Explain the use case and the observable result you need.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the change and any relevant constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance evidence
+      description: Describe how the result could be checked, including hardware evidence if needed.
+    validations:
+      required: true

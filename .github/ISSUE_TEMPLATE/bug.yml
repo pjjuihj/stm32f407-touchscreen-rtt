@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible defect
+title: "[Bug] "
+labels: [bug, needs-triage]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include firmware commit, board revision, and exact steps where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Attach logs, screenshots, or measurements. State whether this was observed on hardware.
+    validations:
+      required: true

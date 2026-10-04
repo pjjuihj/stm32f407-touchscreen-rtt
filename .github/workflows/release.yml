@@ -1,0 +1,223 @@
+name: Firmware release
+
+on:
+  push:
+    tags:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Build only or publish an existing draft
+        required: true
+        type: choice
+        options: [dry-run, publish]
+      tag:
+        description: Existing stable tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
+      FLASH:
+        description: Physical flash result; required as PASS for publish
+        required: false
+        type: string
+      HIL:
+        description: Physical HIL result; required as PASS for publish
+        required: false
+        type: string
+      evidence_url:
+        description: URL of recorded FLASH and HIL evidence; required for publish
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      commit: ${{ steps.tag.outputs.commit }}
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      EVENT_REF_NAME: ${{ github.ref_name }}
+      DISPATCH_TAG: ${{ inputs.tag }}
+      DISPATCH_MODE: ${{ inputs.mode }}
+      FLASH_RESULT: ${{ inputs.FLASH }}
+      HIL_RESULT: ${{ inputs.HIL }}
+      EVIDENCE_URL: ${{ inputs.evidence_url }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+      - name: Validate stable tag and source
+        id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == push ]]; then
+            tag="$EVENT_REF_NAME"
+          else
+            tag="$DISPATCH_TAG"
+          fi
+          [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Tag must be vMAJOR.MINOR.PATCH' >&2; exit 1; }
+          git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
+          commit="$(git rev-list -n 1 "$tag")"
+          [[ -n "$commit" ]] || exit 1
+          if [[ "$EVENT_NAME" == push ]]; then
+            event_commit="$(git rev-parse "$GITHUB_SHA^{commit}")"
+            [[ "$commit" == "$event_commit" ]] || { echo 'Tag and event commit differ' >&2; exit 1; }
+          elif [[ "$DISPATCH_MODE" == publish ]]; then
+            [[ "$FLASH_RESULT" == PASS && "$HIL_RESULT" == PASS ]] || { echo 'Publishing requires exact FLASH=PASS and HIL=PASS' >&2; exit 1; }
+            [[ "$EVIDENCE_URL" =~ ^https://[^[:space:]]+$ ]] || { echo 'An HTTPS evidence URL is required' >&2; exit 1; }
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+  build-and-test:
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.validate.outputs.commit }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ needs.validate.outputs.commit }}
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi ninja-build
+      - name: Build firmware and record toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release"
+          arm-none-eabi-gcc --version | head -n 1 > "$RUNNER_TEMP/release/toolchain.txt"
+          cmake --version | head -n 1 >> "$RUNNER_TEMP/release/toolchain.txt"
+          cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja 2>&1 | tee "$RUNNER_TEMP/release/configure.log"
+          cmake --build "$RUNNER_TEMP/firmware" --target TOUCH.elf 2>&1 | tee "$RUNNER_TEMP/release/build.log"
+          cp "$RUNNER_TEMP/firmware/TOUCH.bin" "$RUNNER_TEMP/release/TOUCH.bin"
+          cp "$RUNNER_TEMP/firmware/TOUCH.hex" "$RUNNER_TEMP/release/TOUCH.hex"
+          test -s "$RUNNER_TEMP/release/TOUCH.bin"
+          test -s "$RUNNER_TEMP/release/TOUCH.hex"
+      - name: Run host tests and record results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/host-tests"
+          for source in tests/test_ring_buffer.c tests/test_interrupt_safety.c tests/test_dma_scheduler.c; do
+            name="${source##*/}"
+            cc -std=c11 -O0 "$source" -o "$RUNNER_TEMP/host-tests/${name%.c}" 2>&1 | tee -a "$RUNNER_TEMP/release/host-tests.log"
+            "$RUNNER_TEMP/host-tests/${name%.c}" 2>&1 | tee -a "$RUNNER_TEMP/release/host-tests.log"
+          done
+          if [[ -f tests/feature_recovery/CMakeLists.txt ]]; then
+            cmake -S tests/feature_recovery -B "$RUNNER_TEMP/feature-recovery" -G Ninja -DCMAKE_BUILD_TYPE=Debug 2>&1 | tee "$RUNNER_TEMP/release/feature-configure.log"
+            cmake --build "$RUNNER_TEMP/feature-recovery" 2>&1 | tee "$RUNNER_TEMP/release/feature-build.log"
+            ctest --test-dir "$RUNNER_TEMP/feature-recovery" --output-on-failure 2>&1 | tee "$RUNNER_TEMP/release/feature-tests.log"
+            echo run > "$RUNNER_TEMP/release/feature-status.txt"
+          else
+            echo absent > "$RUNNER_TEMP/release/feature-status.txt"
+            echo 'Feature recovery CMake entry absent from this commit' > "$RUNNER_TEMP/release/feature-tests.log"
+          fi
+      - uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0.20.6
+        with:
+          path: .
+          format: spdx-json
+          output-file: ${{ runner.temp }}/release/TOUCH.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+      - name: Write manifest and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/release"
+          test -s TOUCH.spdx.json
+          jq -n \
+            --arg tag "$RELEASE_TAG" \
+            --arg commit "$SOURCE_COMMIT" \
+            --rawfile toolchain toolchain.txt \
+            --rawfile configure configure.log \
+            --rawfile build build.log \
+            --rawfile host_tests host-tests.log \
+            --rawfile feature_tests feature-tests.log \
+            --rawfile feature_status feature-status.txt \
+            '{tag:$tag, commit:$commit, toolchain:$toolchain, build:{configure:$configure, output:$build, result:"PASS"}, tests:{host:{result:"PASS", output:$host_tests}, feature_recovery:{status:($feature_status|rtrimstr("\n")), output:$feature_tests}}}' > manifest.json
+          sha256sum TOUCH.bin TOUCH.hex TOUCH.spdx.json manifest.json > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: firmware-release-${{ needs.validate.outputs.commit }}
+          path: |
+            ${{ runner.temp }}/release/TOUCH.bin
+            ${{ runner.temp }}/release/TOUCH.hex
+            ${{ runner.temp }}/release/TOUCH.spdx.json
+            ${{ runner.temp }}/release/manifest.json
+            ${{ runner.temp }}/release/SHA256SUMS
+          if-no-files-found: error
+
+  draft-release:
+    if: ${{ github.event_name == 'push' }}
+    needs: [validate, build-and-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.validate.outputs.commit }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: firmware-release-${{ needs.validate.outputs.commit }}
+          path: ${{ runner.temp }}/release
+      - name: Verify and create draft release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$(git rev-list -n 1 "$RELEASE_TAG")" == "$SOURCE_COMMIT" ]] || exit 1
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo 'Release already exists' >&2
+            exit 1
+          fi
+          cd "$RUNNER_TEMP/release"
+          sha256sum -c SHA256SUMS
+          jq -e --arg tag "$RELEASE_TAG" --arg commit "$SOURCE_COMMIT" '.tag == $tag and .commit == $commit and .build.result == "PASS" and .tests.host.result == "PASS"' manifest.json >/dev/null
+          jq -e '.spdxVersion | startswith("SPDX-")' TOUCH.spdx.json >/dev/null
+          gh release create "$RELEASE_TAG" TOUCH.bin TOUCH.hex TOUCH.spdx.json manifest.json SHA256SUMS --draft --verify-tag --target "$SOURCE_COMMIT" --title "$RELEASE_TAG" --notes 'Firmware build and host test evidence are in manifest.json. FLASH and HIL are not claimed.'
+
+  publish-draft:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish' }}
+    needs: [validate, build-and-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.validate.outputs.commit }}
+      EVIDENCE_URL: ${{ inputs.evidence_url }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+      - name: Verify existing draft and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          [[ "$(git rev-list -n 1 "$RELEASE_TAG")" == "$SOURCE_COMMIT" ]] || exit 1
+          [[ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" == true ]] || { echo 'Existing draft release required' >&2; exit 1; }
+          [[ "$(gh release view "$RELEASE_TAG" --json tagName --jq .tagName)" == "$RELEASE_TAG" ]] || { echo 'Release tag differs' >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/published-assets"
+          gh release download "$RELEASE_TAG" --dir "$RUNNER_TEMP/published-assets"
+          cd "$RUNNER_TEMP/published-assets"
+          for asset in TOUCH.bin TOUCH.hex TOUCH.spdx.json manifest.json SHA256SUMS; do test -s "$asset"; done
+          sha256sum -c SHA256SUMS
+          jq -e --arg tag "$RELEASE_TAG" --arg commit "$SOURCE_COMMIT" '.tag == $tag and .commit == $commit and .build.result == "PASS" and .tests.host.result == "PASS"' manifest.json >/dev/null
+          jq -e '.spdxVersion | startswith("SPDX-")' TOUCH.spdx.json >/dev/null
+          gh release edit "$RELEASE_TAG" --notes "FLASH=PASS; HIL=PASS; evidence: $EVIDENCE_URL" --draft=false

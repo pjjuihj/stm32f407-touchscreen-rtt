@@ -149,6 +149,12 @@ pyocd rtt -t stm32f407zg -a 0x20014f10 --up-channel-id 2
 - pyOCD (烧录)
 - CMSIS-DAP 调试器
 
+## 项目治理与交付
+
+项目需求和问题统一通过 GitHub Issues 管理，代码通过 Pull Request 评审；构建、自动化测试、实机验证、稳定版本发布和恢复按治理手册记录。
+
+- [项目治理手册与模板](docs/project-management/README.md)
+
 ## 许可证
 
 MIT License
