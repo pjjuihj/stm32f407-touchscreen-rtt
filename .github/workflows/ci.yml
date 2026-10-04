@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Install ARM build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi ninja-build
+      - name: Prepare LVGL CMake support in the runner checkout
+        run: bash .github/scripts/prepare-lvgl-ci-build.sh
+      - name: Build firmware without touching hardware
+        run: |
+          cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja "-DCMAKE_PROJECT_INCLUDE=$GITHUB_WORKSPACE/.github/scripts/configure-firmware-dependencies.cmake"
+          cmake --build "$RUNNER_TEMP/firmware" --target TOUCH.elf
+          test -s "$RUNNER_TEMP/firmware/TOUCH.elf"
+          test -s "$RUNNER_TEMP/firmware/TOUCH.hex"
+          test -s "$RUNNER_TEMP/firmware/TOUCH.bin"
+
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Run tracked host tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/host-tests"
+          for source in tests/test_ring_buffer.c tests/test_interrupt_safety.c tests/test_dma_scheduler.c; do
+            name="${source##*/}"
+            cc -std=c11 -O0 "$source" -o "$RUNNER_TEMP/host-tests/${name%.c}"
+            "$RUNNER_TEMP/host-tests/${name%.c}"
+          done
+      - name: Run feature recovery tests when committed
+        if: ${{ hashFiles('tests/feature_recovery/CMakeLists.txt') != '' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+          cmake -S tests/feature_recovery -B "$RUNNER_TEMP/feature-recovery" -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          cmake --build "$RUNNER_TEMP/feature-recovery"
+          ctest --test-dir "$RUNNER_TEMP/feature-recovery" --output-on-failure
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          languages: c-cpp
+          build-mode: none
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
