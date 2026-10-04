@@ -17,6 +17,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi ninja-build
+      - name: Prepare LVGL CMake support in the runner checkout
+        run: bash .github/scripts/prepare-lvgl-ci-build.sh
       - name: Build firmware without touching hardware
         run: |
           cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja
