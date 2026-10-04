@@ -21,7 +21,7 @@ jobs:
         run: bash .github/scripts/prepare-lvgl-ci-build.sh
       - name: Build firmware without touching hardware
         run: |
-          cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja
+          cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja "-DCMAKE_PROJECT_INCLUDE=$GITHUB_WORKSPACE/.github/scripts/configure-firmware-dependencies.cmake"
           cmake --build "$RUNNER_TEMP/firmware" --target TOUCH.elf
           test -s "$RUNNER_TEMP/firmware/TOUCH.elf"
           test -s "$RUNNER_TEMP/firmware/TOUCH.hex"

@@ -96,7 +96,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/release"
           arm-none-eabi-gcc --version | head -n 1 > "$RUNNER_TEMP/release/toolchain.txt"
           cmake --version | head -n 1 >> "$RUNNER_TEMP/release/toolchain.txt"
-          cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja 2>&1 | tee "$RUNNER_TEMP/release/configure.log"
+          cmake -S . -B "$RUNNER_TEMP/firmware" -G Ninja "-DCMAKE_PROJECT_INCLUDE=$GITHUB_WORKSPACE/.github/scripts/configure-firmware-dependencies.cmake" 2>&1 | tee "$RUNNER_TEMP/release/configure.log"
           cmake --build "$RUNNER_TEMP/firmware" --target TOUCH.elf 2>&1 | tee "$RUNNER_TEMP/release/build.log"
           cp "$RUNNER_TEMP/firmware/TOUCH.bin" "$RUNNER_TEMP/release/TOUCH.bin"
           cp "$RUNNER_TEMP/firmware/TOUCH.hex" "$RUNNER_TEMP/release/TOUCH.hex"
