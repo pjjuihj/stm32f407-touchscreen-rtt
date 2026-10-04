@@ -12,8 +12,8 @@ on:
         type: choice
         options: [dry-run, publish]
       tag:
-        description: Existing stable tag (vMAJOR.MINOR.PATCH)
-        required: true
+        description: Existing stable tag for publish only; leave empty for dry-run
+        required: false
         type: string
       FLASH:
         description: Physical flash result; required as PASS for publish
@@ -37,6 +37,8 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
       commit: ${{ steps.tag.outputs.commit }}
+      source_ref: ${{ steps.tag.outputs.source_ref }}
+      mode: ${{ steps.tag.outputs.mode }}
     env:
       EVENT_NAME: ${{ github.event_name }}
       EVENT_REF_NAME: ${{ github.ref_name }}
@@ -56,22 +58,40 @@ jobs:
           set -euo pipefail
           if [[ "$EVENT_NAME" == push ]]; then
             tag="$EVENT_REF_NAME"
-          else
-            tag="$DISPATCH_TAG"
-          fi
-          [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Tag must be vMAJOR.MINOR.PATCH' >&2; exit 1; }
-          git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
-          commit="$(git rev-list -n 1 "$tag")"
-          [[ -n "$commit" ]] || exit 1
-          if [[ "$EVENT_NAME" == push ]]; then
-            event_commit="$(git rev-parse "$GITHUB_SHA^{commit}")"
-            [[ "$commit" == "$event_commit" ]] || { echo 'Tag and event commit differ' >&2; exit 1; }
           elif [[ "$DISPATCH_MODE" == publish ]]; then
-            [[ "$FLASH_RESULT" == PASS && "$HIL_RESULT" == PASS ]] || { echo 'Publishing requires exact FLASH=PASS and HIL=PASS' >&2; exit 1; }
-            [[ "$EVIDENCE_URL" =~ ^https://[^[:space:]]+$ ]] || { echo 'An HTTPS evidence URL is required' >&2; exit 1; }
+            tag="$DISPATCH_TAG"
+          elif [[ "$DISPATCH_MODE" == dry-run ]]; then
+            [[ -z "$DISPATCH_TAG" ]] || { echo 'Leave tag empty for dry-run' >&2; exit 1; }
+            tag='dry-run'
+          else
+            echo 'Unsupported workflow dispatch mode' >&2
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == push || "$DISPATCH_MODE" == publish ]]; then
+            [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo 'Tag must be vMAJOR.MINOR.PATCH' >&2; exit 1; }
+            git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
+            commit="$(git rev-list -n 1 "$tag")"
+            [[ -n "$commit" ]] || exit 1
+            source_ref="refs/tags/$tag"
+            if [[ "$EVENT_NAME" == push ]]; then
+              event_commit="$(git rev-parse "$GITHUB_SHA^{commit}")"
+              [[ "$commit" == "$event_commit" ]] || { echo 'Tag and event commit differ' >&2; exit 1; }
+              mode='tag'
+            else
+              [[ "$FLASH_RESULT" == PASS && "$HIL_RESULT" == PASS ]] || { echo 'Publishing requires exact FLASH=PASS and HIL=PASS' >&2; exit 1; }
+              [[ "$EVIDENCE_URL" =~ ^https://[^[:space:]]+$ ]] || { echo 'An HTTPS evidence URL is required' >&2; exit 1; }
+              mode='publish'
+            fi
+          else
+            commit="$(git rev-parse "$GITHUB_SHA^{commit}")"
+            [[ -n "$commit" ]] || exit 1
+            source_ref="$GITHUB_REF"
+            mode='dry-run'
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "source_ref=$source_ref" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
 
   build-and-test:
     needs: validate
@@ -79,6 +99,8 @@ jobs:
     env:
       RELEASE_TAG: ${{ needs.validate.outputs.tag }}
       SOURCE_COMMIT: ${{ needs.validate.outputs.commit }}
+      SOURCE_REF: ${{ needs.validate.outputs.source_ref }}
+      RELEASE_MODE: ${{ needs.validate.outputs.mode }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -138,18 +160,20 @@ jobs:
           jq -n \
             --arg tag "$RELEASE_TAG" \
             --arg commit "$SOURCE_COMMIT" \
+            --arg source_ref "$SOURCE_REF" \
+            --arg mode "$RELEASE_MODE" \
             --rawfile toolchain toolchain.txt \
             --rawfile configure configure.log \
             --rawfile build build.log \
             --rawfile host_tests host-tests.log \
             --rawfile feature_tests feature-tests.log \
             --rawfile feature_status feature-status.txt \
-            '{tag:$tag, commit:$commit, toolchain:$toolchain, build:{configure:$configure, output:$build, result:"PASS"}, tests:{host:{result:"PASS", output:$host_tests}, feature_recovery:{status:($feature_status|rtrimstr("\n")), output:$feature_tests}}}' > manifest.json
+            '{mode:$mode, tag:$tag, source_ref:$source_ref, commit:$commit, toolchain:$toolchain, build:{configure:$configure, output:$build, result:"PASS"}, tests:{host:{result:"PASS", output:$host_tests}, feature_recovery:{status:($feature_status|rtrimstr("\n")), output:$feature_tests}}}' > manifest.json
           sha256sum TOUCH.bin TOUCH.hex TOUCH.spdx.json manifest.json > SHA256SUMS
           sha256sum -c SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: firmware-release-${{ needs.validate.outputs.commit }}
+          name: firmware-build-${{ needs.validate.outputs.commit }}
           path: |
             ${{ runner.temp }}/release/TOUCH.bin
             ${{ runner.temp }}/release/TOUCH.hex
@@ -174,7 +198,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: firmware-release-${{ needs.validate.outputs.commit }}
+          name: firmware-build-${{ needs.validate.outputs.commit }}
           path: ${{ runner.temp }}/release
       - name: Verify and create draft release
         shell: bash
