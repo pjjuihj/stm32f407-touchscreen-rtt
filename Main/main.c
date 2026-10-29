@@ -2,302 +2,236 @@
 #include "beep.h"
 #include "key.h"
 #include "lcd.h"
+#include "lcd_backlight.h"
 #include "touch.h"
 #include "usart.h"
 #include "log.h"
 #include "test_log.h"
-#include "gui_driver.h"     /* 新增: LVGL驱动接口 */
-#include "lvgl.h"           /* 新增: LVGL头文件 */
-#include "SEGGER_RTT.h"     /* SEGGER RTT debug output */
-#include "SEGGER_SYSVIEW.h" /* SEGGER SystemView */
-#include <string.h>
+#include "console.h"
+#include "iot.h"
+#include "wifi.h"
+#include "bluetooth.h"
+#include "gui_driver.h"
+#include "lvgl.h"
+#include "SEGGER_RTT.h"
+#include "SEGGER_SYSVIEW.h"
+
 #include <stdio.h>
-#include <stdlib.h>
 
-// External USART1 handle
-extern UART_HandleTypeDef huart1;
+static uint32_t g_reset_csr_at_boot;
+static uint32_t g_led_off_at;
+static uint8_t g_led_pulse_pending;
+static volatile uint32_t g_usart1_rx_bytes;
+static volatile uint32_t g_usart1_error_callbacks;
+static volatile uint32_t g_usart1_error_flags;
 
-// Simple receive buffer
-static uint8_t rxChar;
-volatile uint8_t rxInterruptCalled = 0;
-static volatile uint8_t txPending = 0;  // 非阻塞回声标志
-
-// Command buffer (increased to 64 bytes)
-static char cmdBuffer[64];
-static uint8_t cmdIndex = 0;
-
-// USART1 IRQ handler
-void USART1_IRQHandler(void)
+static void ReportUsart1Diagnostics(void)
 {
-    HAL_UART_IRQHandler(&huart1);
-}
+    static uint32_t last_report_tick;
+    static uint32_t previous_rx_bytes;
+    static uint32_t previous_error_callbacks;
+    static uint32_t previous_error_flags;
+    static USART1TxDiagnostic previous_tx;
+    static uint8_t have_previous;
+    USART1TxDiagnostic tx;
+    uint32_t now = HAL_GetTick();
+    uint32_t rx_bytes;
+    uint32_t error_callbacks;
+    uint32_t error_flags;
+    char line[224];
+    int length;
 
-// UART receive callback
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance == USART1) {
-        rxInterruptCalled = 1;
+    if ((uint32_t)(now - last_report_tick) < 1000U) {
+        return;
+    }
+    last_report_tick = now;
 
-        // Echo character: 保存待发送字符，在主循环中发送（避免中断阻塞）
-        txPending = rxChar;
+    rx_bytes = g_usart1_rx_bytes;
+    error_callbacks = g_usart1_error_callbacks;
+    error_flags = g_usart1_error_flags;
+    USART1_GetTxDiagnostic(&tx);
+    if (have_previous != 0U &&
+        rx_bytes == previous_rx_bytes &&
+        error_callbacks == previous_error_callbacks &&
+        error_flags == previous_error_flags &&
+        tx.dma_started == previous_tx.dma_started &&
+        tx.dma_start_failures == previous_tx.dma_start_failures &&
+        tx.dma_completed == previous_tx.dma_completed &&
+        tx.dma_error_callbacks == previous_tx.dma_error_callbacks &&
+        tx.failed_transmissions == previous_tx.failed_transmissions &&
+        tx.rejected_replies == previous_tx.rejected_replies &&
+        tx.dropped_logs == previous_tx.dropped_logs &&
+        tx.pending == previous_tx.pending &&
+        tx.busy == previous_tx.busy) {
+        return;
+    }
 
-        // Process character
-        if (rxChar == '\r' || rxChar == '\n') {
-            // End of command
-            if (cmdIndex > 0) {
-                cmdBuffer[cmdIndex] = '\0';
-                // Process command
-                if (strcmp(cmdBuffer, "STATUS") == 0) {
-                    USART1_SendString("\r\n--- Log Status ---\r\n");
-                    for (int i = 0; i < LOG_MODULE_MAX; i++) {
-                        char buf[32];
-                        snprintf(buf, sizeof(buf), "%s: %s\r\n",
-                                 LogModuleNames[i],
-                                 g_logConfig.enabled[i] ? "ON" : "OFF");
-                        USART1_SendString(buf);
-                    }
-                } else if (strcmp(cmdBuffer, "TOUCH ON") == 0) {
-                    Log_Enable(LOG_MODULE_TOUCH, true);
-                    USART1_SendString("\r\nTouch log: ON\r\n");
-                } else if (strcmp(cmdBuffer, "TOUCH OFF") == 0) {
-                    Log_Enable(LOG_MODULE_TOUCH, false);
-                    USART1_SendString("\r\nTouch log: OFF\r\n");
-                } else if (strcmp(cmdBuffer, "LCD ON") == 0) {
-                    Log_Enable(LOG_MODULE_LCD, true);
-                    USART1_SendString("\r\nLCD log: ON\r\n");
-                } else if (strcmp(cmdBuffer, "LCD OFF") == 0) {
-                    Log_Enable(LOG_MODULE_LCD, false);
-                    USART1_SendString("\r\nLCD log: OFF\r\n");
-                } else if (strcmp(cmdBuffer, "SYSTEM ON") == 0) {
-                    Log_Enable(LOG_MODULE_SYSTEM, true);
-                    USART1_SendString("\r\nSystem log: ON\r\n");
-                } else if (strcmp(cmdBuffer, "SYSTEM OFF") == 0) {
-                    Log_Enable(LOG_MODULE_SYSTEM, false);
-                    USART1_SendString("\r\nSystem log: OFF\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL TOUCH 1") == 0) {
-                    Log_SetLevel(LOG_MODULE_TOUCH, 1);
-                    USART1_SendString("\r\nTouch level: ERROR\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL TOUCH 2") == 0) {
-                    Log_SetLevel(LOG_MODULE_TOUCH, 2);
-                    USART1_SendString("\r\nTouch level: WARNING\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL TOUCH 3") == 0) {
-                    Log_SetLevel(LOG_MODULE_TOUCH, 3);
-                    USART1_SendString("\r\nTouch level: INFO\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL TOUCH 4") == 0) {
-                    Log_SetLevel(LOG_MODULE_TOUCH, 4);
-                    USART1_SendString("\r\nTouch level: DEBUG\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL LCD 1") == 0) {
-                    Log_SetLevel(LOG_MODULE_LCD, 1);
-                    USART1_SendString("\r\nLCD level: ERROR\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL LCD 2") == 0) {
-                    Log_SetLevel(LOG_MODULE_LCD, 2);
-                    USART1_SendString("\r\nLCD level: WARNING\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL LCD 3") == 0) {
-                    Log_SetLevel(LOG_MODULE_LCD, 3);
-                    USART1_SendString("\r\nLCD level: INFO\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL LCD 4") == 0) {
-                    Log_SetLevel(LOG_MODULE_LCD, 4);
-                    USART1_SendString("\r\nLCD level: DEBUG\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL SYSTEM 1") == 0) {
-                    Log_SetLevel(LOG_MODULE_SYSTEM, 1);
-                    USART1_SendString("\r\nSystem level: ERROR\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL SYSTEM 2") == 0) {
-                    Log_SetLevel(LOG_MODULE_SYSTEM, 2);
-                    USART1_SendString("\r\nSystem level: WARNING\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL SYSTEM 3") == 0) {
-                    Log_SetLevel(LOG_MODULE_SYSTEM, 3);
-                    USART1_SendString("\r\nSystem level: INFO\r\n");
-                } else if (strcmp(cmdBuffer, "LEVEL SYSTEM 4") == 0) {
-                    Log_SetLevel(LOG_MODULE_SYSTEM, 4);
-                    USART1_SendString("\r\nSystem level: DEBUG\r\n");
-                } else if (strcmp(cmdBuffer, "DUMP") == 0) {
-                    Log_Dump();
-                } else if (strcmp(cmdBuffer, "CLEAR") == 0) {
-                    Log_Clear();
-                    USART1_SendString("\r\nLog cleared\r\n");
-                } else if (strncmp(cmdBuffer, "TEST ", 5) == 0) {
-                    // TEST command
-                    char *test_cmd = cmdBuffer + 5;
-                    if (strcmp(test_cmd, "RUN") == 0) {
-                        Test_RunAll();
-                    } else if (strcmp(test_cmd, "WRITE") == 0) {
-                        for (int i = 0; i < 5; i++) {
-                            Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Test write %d", i);
-                        }
-                        USART1_SendString("\r\nTest write complete\r\n");
-                    } else if (strcmp(test_cmd, "OVERFLOW") == 0) {
-                        for (int i = 0; i < 70; i++) {
-                            Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Overflow %d", i);
-                        }
-                        USART1_SendString("\r\nTest overflow complete\r\n");
-                    } else if (strcmp(test_cmd, "CLEAR") == 0) {
-                        Log_Clear();
-                        USART1_SendString("\r\nTest log cleared\r\n");
-                    } else {
-                        USART1_SendString("\r\nUnknown TEST command. Use: RUN/WRITE/OVERFLOW/CLEAR\r\n");
-                    }
-                } else if (strcmp(cmdBuffer, "HELP") == 0) {
-                    USART1_SendString("\r\n--- Commands ---\r\n");
-                    USART1_SendString("STATUS          - Show log status\r\n");
-                    USART1_SendString("TOUCH ON/OFF    - Enable/disable touch log\r\n");
-                    USART1_SendString("LCD ON/OFF      - Enable/disable LCD log\r\n");
-                    USART1_SendString("SYSTEM ON/OFF   - Enable/disable system log\r\n");
-                    USART1_SendString("LEVEL <MOD> <1-4> - Set log level\r\n");
-                    USART1_SendString("DUMP            - Dump all logs\r\n");
-                    USART1_SendString("CLEAR           - Clear log buffer\r\n");
-                    USART1_SendString("LOGMODE RTT     - Switch log output to RTT\r\n");
-                    USART1_SendString("LOGMODE UART    - Switch log output to UART\r\n");
-                    USART1_SendString("TEST RUN        - Run all tests\r\n");
-                    USART1_SendString("TEST WRITE      - Test log write\r\n");
-                    USART1_SendString("TEST OVERFLOW   - Test buffer overflow\r\n");
-                    USART1_SendString("TEST CLEAR      - Clear test logs\r\n");
-                    USART1_SendString("HELP            - Show this help\r\n");
-                } else if (strcmp(cmdBuffer, "LOGMODE RTT") == 0) {
-                    gui_log_set_output_mode(LOG_OUTPUT_RTT);
-                    USART1_SendString("\r\nLog output: RTT\r\n");
-                } else if (strcmp(cmdBuffer, "LOGMODE UART") == 0) {
-                    gui_log_set_output_mode(LOG_OUTPUT_UART);
-                    USART1_SendString("\r\nLog output: UART\r\n");
-                } else {
-                    USART1_SendString("\r\nUnknown command. Type HELP.\r\n");
-                }
-                cmdIndex = 0;
-            }
-        } else if (cmdIndex < sizeof(cmdBuffer) - 1) {
-            cmdBuffer[cmdIndex++] = rxChar;
-        }
+    previous_rx_bytes = rx_bytes;
+    previous_error_callbacks = error_callbacks;
+    previous_error_flags = error_flags;
+    previous_tx = tx;
+    have_previous = 1U;
 
-        // Re-enable receive interrupt
-        HAL_UART_Receive_IT(&huart1, &rxChar, 1);
+    length = snprintf(line, sizeof(line),
+                      "UART1_DIAG RX=%lu ERRCB=%lu ERR=0x%08lX "
+                      "TXSTART=%lu TXDONE=%lu TXSTARTFAIL=%lu TXDMAERR=%lu "
+                      "TXFAIL=%lu TXREJ=%lu TXDROP=%lu BUSY=%u PENDING=%lu\r\n",
+                      (unsigned long)rx_bytes,
+                      (unsigned long)error_callbacks,
+                      (unsigned long)error_flags,
+                      (unsigned long)tx.dma_started,
+                      (unsigned long)tx.dma_completed,
+                      (unsigned long)tx.dma_start_failures,
+                      (unsigned long)tx.dma_error_callbacks,
+                      (unsigned long)tx.failed_transmissions,
+                      (unsigned long)tx.rejected_replies,
+                      (unsigned long)tx.dropped_logs,
+                      (unsigned int)tx.busy,
+                      (unsigned long)tx.pending);
+    if (length > 0 && (size_t)length < sizeof(line)) {
+        (void)SEGGER_RTT_WriteString(RTT_CHANNEL_APP, line);
     }
 }
 
-/*********************************************************************************
-*********************�������� STM32F407Ӧ�ÿ�����(�����)*************************
-**********************************************************************************
-* �ļ�����: ����3 ����ʹ��������main()                                           *
-* �ļ�����������ʵ��                                                             *
-* �������ڣ�2017.08.30                                                           *
-* ��    ����V1.0                                                                 *
-* ��    �ߣ�Clever                                                               *
-* ˵    ������������LED���������������                                          *
-* �Ա����̣�https://shop125046348.taobao.com                                     *
-* ��    ���������̴��������ѧϰ�ο�                                             *
- **********************************************************************************
- *********************************************************************************/
-
-/* 按钮点击事件回调 - LED闪烁 */
-static void btn_event_cb(lv_event_t *e)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *uart)
 {
-	LED0 = 0;   /* 亮 */
-	delay_ms(100);
-	LED0 = 1;   /* 灭 */
+    if (uart == NULL) {
+        return;
+    }
+    if (uart->Instance == USART1) {
+        g_usart1_rx_bytes++;
+        Console_UART_RxComplete(uart);
+    } else if (uart->Instance == UART4) {
+        WiFi_UART_RxComplete(uart);
+    } else if (uart->Instance == USART3) {
+        BT_UART_RxComplete(uart);
+    }
+}
+
+void USART1_ConsoleErrorCallback(UART_HandleTypeDef *uart)
+{
+    if (uart == NULL || uart->Instance != USART1) {
+        return;
+    }
+    g_usart1_error_callbacks++;
+    g_usart1_error_flags |= uart->ErrorCode;
+    Console_UART_ErrorCallback(uart);
+}
+
+static void ButtonEventCallback(lv_event_t *event)
+{
+    (void)event;
+    LED0 = 0;
+    g_led_off_at = HAL_GetTick() + 100U;
+    g_led_pulse_pending = 1U;
 }
 
 int main(void)
 {
-  HAL_Init();                    	//��ʼ��HAL��
-  Stm32_Clock_Init(336,8,2,7);  	//����ʱ��,168Mhz
-	delay_init();     //��ʱ������ʼ��
-	LED_Init();				//LED��ʼ��
-	BEEP_Init();      //��������ʼ��
-	KEY_Init();       //������ʼ��
+    g_reset_csr_at_boot = RCC->CSR;
 
-	// Initialize USART1 FIRST - for debug output
-	USART1_Init();
-	delay_ms(100);  // Wait for USART to be ready
+    HAL_Init();
+    Stm32_Clock_Init(336, 8, 2, 7);
+    delay_init();
+    LED_Init();
+    BEEP_Init();
+    KEY_Init();
 
-	// Enable USART1 receive interrupt
-	HAL_UART_Receive_IT(&huart1, &rxChar, 1);
+    USART1_Init();
+    Console_Init();
+    {
+        char reset_message[40];
+        (void)snprintf(reset_message, sizeof(reset_message),
+                       "F407 RESET_CSR=0x%08lX\r\n",
+                       (unsigned long)g_reset_csr_at_boot);
+        USART1_SendReply(reset_message);
+        USART1_TxProcess();
+    }
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    SEGGER_RTT_Init();
+    SEGGER_SYSVIEW_Init();
+    SEGGER_SYSVIEW_Start();
 
-	// Initialize SEGGER RTT for debug output (before any logging)
-	SEGGER_RTT_Init();
+    Log_Init();
+    Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "System starting...");
 
-	// Initialize SystemView for real-time analysis
-	SEGGER_SYSVIEW_Init();
-	SEGGER_SYSVIEW_Start();
+    LCD_Backlight_Init();
+    LCD_Init();
+    Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LCD initialized");
+    Touch_Init();
+    Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Touch initialized");
 
-	// Initialize log system AFTER USART is ready
-	Log_Init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "System starting...");
+    gui_log_init();
+    lv_init();
+    gui_tick_init();
+    if (!gui_disp_init()) {
+        Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_ERROR,
+                  "LVGL display initialization failed; Wi-Fi startup skipped");
+        while (1) {
+            Console_Process();
+            gui_log_flush();
+            USART1_TxProcess();
+            ReportUsart1Diagnostics();
+            delay_ms(5U);
+        }
+    }
+    if (!gui_touch_init()) {
+        Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_ERROR,
+                  "LVGL touch initialization failed");
+    }
+    Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LVGL initialized");
 
-	/* 初始化LCD */
-	LCD_Init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LCD initialized");
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFFFFFF), 0);
+    lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, 0);
 
-	/* 初始化触摸 */
-	Touch_Init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "Touch initialized");
+    lv_obj_t *title = lv_label_create(lv_screen_active());
+    if (title != NULL) {
+        lv_label_set_text(title, "LVGL Image Demo");
+        lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+        lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+    }
 
-	/* LVGL初始化 - 日志必须在lv_init之前注册 */
-	gui_log_init();
-	lv_init();
-	gui_tick_init();
-	gui_disp_init();
-	gui_touch_init();
-	Log_Write(LOG_MODULE_SYSTEM, LOG_LEVEL_INFO, "LVGL initialized");
+    lv_obj_t *home_button = lv_button_create(lv_screen_active());
+    if (home_button != NULL) {
+        lv_obj_set_size(home_button, 120, 50);
+        lv_obj_align(home_button, LV_ALIGN_CENTER, 0, -40);
+        lv_obj_add_event_cb(home_button, ButtonEventCallback, LV_EVENT_CLICKED, NULL);
+        lv_obj_t *label = lv_label_create(home_button);
+        if (label != NULL) {
+            lv_label_set_text(label, LV_SYMBOL_HOME " Home");
+            lv_obj_center(label);
+        }
+    }
 
-	/* 设置屏幕背景色 */
-	lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0xFFFFFF), 0);
-	lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, 0);
+    lv_obj_t *settings_button = lv_button_create(lv_screen_active());
+    if (settings_button != NULL) {
+        lv_obj_set_size(settings_button, 120, 50);
+        lv_obj_align(settings_button, LV_ALIGN_CENTER, 0, 40);
+        lv_obj_add_event_cb(settings_button, ButtonEventCallback, LV_EVENT_CLICKED, NULL);
+        lv_obj_t *label = lv_label_create(settings_button);
+        if (label != NULL) {
+            lv_label_set_text(label, LV_SYMBOL_SETTINGS " Settings");
+            lv_obj_center(label);
+        }
+    }
 
-	/* 创建标题标签 */
-	lv_obj_t *title = lv_label_create(lv_screen_active());
-	if(title != NULL)
-	{
-		lv_label_set_text(title, "LVGL Image Demo");
-		lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
-		lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
-	}
+    /* Bring up the display before starting the asynchronous ESP sync. */
+    lv_refr_now(NULL);
+    IoT_Init(NULL);
 
-	/* 创建带图标的按钮1 - 使用LVGL符号 */
-	lv_obj_t *btn1 = lv_button_create(lv_screen_active());
-	if(btn1 != NULL)
-	{
-		lv_obj_set_size(btn1, 120, 50);
-		lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
-		lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, NULL);
-
-		lv_obj_t *label1 = lv_label_create(btn1);
-		if(label1 != NULL)
-		{
-			/* LV_SYMBOL_HOME 是LVGL内置的主页图标 */
-			lv_label_set_text(label1, LV_SYMBOL_HOME " Home");
-			lv_obj_center(label1);
-		}
-	}
-
-	/* 创建带图标的按钮2 - 使用LVGL符号 */
-	lv_obj_t *btn2 = lv_button_create(lv_screen_active());
-	if(btn2 != NULL)
-	{
-		lv_obj_set_size(btn2, 120, 50);
-		lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
-		lv_obj_add_event_cb(btn2, btn_event_cb, LV_EVENT_CLICKED, NULL);
-
-		lv_obj_t *label2 = lv_label_create(btn2);
-		if(label2 != NULL)
-		{
-			/* LV_SYMBOL_SETTINGS 是LVGL内置的设置图标 */
-			lv_label_set_text(label2, LV_SYMBOL_SETTINGS " Settings");
-			lv_obj_center(label2);
-		}
-	}
-
-	/* 强制刷新整个屏幕 */
-	lv_refr_now(NULL);
-
-	/* 主循环 */
-	while(1) {
-		/* 非阻塞回声: 在主循环中发送，避免中断阻塞 */
-		if(txPending != 0) {
-			USART1_SendChar(txPending);
-			txPending = 0;
-		}
-		/* LVGL日志: 从缓冲区发送到串口 */
-		gui_log_flush();
-		lv_task_handler();
-		delay_ms(5);
-	}
+    while (1) {
+        if (g_led_pulse_pending != 0U &&
+            (int32_t)(HAL_GetTick() - g_led_off_at) >= 0) {
+            LED0 = 1;
+            g_led_pulse_pending = 0U;
+        }
+        Console_Process();
+        IoT_Process();
+        gui_log_flush();
+        USART1_TxProcess();
+        ReportUsart1Diagnostics();
+        lv_task_handler();
+        gui_diag_note_loop_completed();
+        delay_ms(5);
+    }
 }
-

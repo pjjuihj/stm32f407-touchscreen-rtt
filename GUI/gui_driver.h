@@ -7,16 +7,34 @@
 #define __GUI_DRIVER_H
 
 #include "lvgl.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+typedef struct {
+    uint32_t loop_completed;
+    uint32_t flush_started;
+    uint32_t flush_completed;
+    uint32_t touch_started;
+    uint32_t touch_completed;
+    uint32_t last_loop_tick;
+    uint32_t last_flush_tick;
+    uint32_t last_touch_tick;
+    uint32_t last_flush_pixels;
+    int16_t last_flush_x1;
+    int16_t last_flush_y1;
+    int16_t last_flush_x2;
+    int16_t last_flush_y2;
+} gui_diag_snapshot_t;
 
 /**
  * @brief 初始化显示驱动
  */
-void gui_disp_init(void);
+bool gui_disp_init(void);
 
 /**
  * @brief 初始化触摸驱动
  */
-void gui_touch_init(void);
+bool gui_touch_init(void);
 
 /**
  * @brief 初始化时钟驱动
@@ -37,6 +55,12 @@ void gui_log_flush(void);
  * @brief 写入自定义日志（供 Log_Write 调用）
  */
 void gui_log_write(const char *str);
+
+/** Record a main-loop iteration that returned from LVGL. */
+void gui_diag_note_loop_completed(void);
+
+/** Copy the latest GUI callback counters for a read-only console report. */
+void gui_diag_get_snapshot(gui_diag_snapshot_t *snapshot);
 
 /**
  * @brief 日志输出模式

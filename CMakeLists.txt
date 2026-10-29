@@ -6,6 +6,8 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_C_COMPILER arm-none-eabi-gcc)
 set(CMAKE_ASM_COMPILER arm-none-eabi-gcc)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+# The CMake compiler-id link probe needs the bare-metal syscall stubs too.
+set(CMAKE_C_FLAGS_INIT "--specs=nosys.specs")
 
 project(TOUCH C ASM)
 
@@ -29,31 +31,50 @@ set(LV_USE_NATIVE_HELIUM_ASM OFF CACHE BOOL "" FORCE)
 set(LV_USE_NATIVE_NEON_ASM OFF CACHE BOOL "" FORCE)
 set(LV_USE_NATIVE_RISCV_ASM OFF CACHE BOOL "" FORCE)
 
-# 包含 LVGL 作为子项目
-add_subdirectory(LVGL ${CMAKE_BINARY_DIR}/LVGL)
-
-# 排除 LVGL 中不需要的 .S 汇编文件（helium/neon）
-if(TARGET lvgl)
-    get_target_property(_lvgl_sources lvgl SOURCES)
-    list(FILTER _lvgl_sources EXCLUDE REGEX ".*\\.S$")
-    set_target_properties(lvgl PROPERTIES SOURCES "${_lvgl_sources}")
-endif()
+# This checkout contains LVGL's source tree but not its optional env_support
+# CMake integration directory. Build the portable C sources directly instead
+# of relying on the missing desktop-only helper.
+file(GLOB_RECURSE LVGL_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/LVGL/src/*.c"
+)
+list(FILTER LVGL_SOURCES EXCLUDE REGEX "/drivers/")
+add_library(lvgl STATIC ${LVGL_SOURCES})
+target_include_directories(lvgl PUBLIC
+    "${CMAKE_SOURCE_DIR}/LVGL"
+    "${CMAKE_SOURCE_DIR}/LVGL/src"
+    "${CMAKE_SOURCE_DIR}"
+)
+target_compile_definitions(lvgl PUBLIC LV_CONF_INCLUDE_SIMPLE=1)
 
 # 用户源文件（使用相对路径）
 set(USER_SOURCES
     Main/main.c
+    Main/console.c
     Main/stm32f4xx_it.c
     GUI/gui_driver.c
     USER/LED/led.c
     USER/BEEP/beep.c
     USER/KEY/key.c
     USER/LCD/lcd.c
+    USER/LCD/lcd_backlight.c
     USER/TOUCH/touch.c
     USER/TOUCH/ft5426.c
     USER/TOUCH/xpt2046.c
     USER/USART/usart.c
+    USER/USART/usart1_tx_scheduler.c
+    USER/USART/usart1_rx_recovery.c
     USER/LOG/log.c
     TEST/test_log.c
+    IoT/iot.c
+    IoT/bluetooth.c
+    IoT/bluetooth_command_parser.c
+    IoT/board_io.c
+    IoT/wifi.c
+    IoT/wifi_at.c
+    IoT/wifi_state.c
+    IoT/wifi_uart_rx_recovery.c
+    SEGGER_RTT/RTT/SEGGER_RTT.c
+    SEGGER_RTT/Sys/SEGGER_SYSVIEW.c
     Common/common.c
     Startup_config/system_stm32f4xx.c
     Startup_config/stm32f4xx_hal_msp.c
@@ -94,6 +115,7 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     .
     Common
     Main
+    IoT
     Startup_config
     STM32F4xx_HAL_Driver/inc
     USER/LED
@@ -105,6 +127,15 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     USER/LOG
     TEST
     GUI
+    SEGGER_RTT
+    SEGGER_RTT/RTT
+    SEGGER_RTT/Sys
+)
+
+# Enable the requested automatic one-shot TCP command for the F407 firmware.
+# The source keeps this diagnostic feature disabled for builds that do not opt in.
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+    IOT_AUTO_TCP_DIAGNOSTIC_ENABLE=1
 )
 
 # 链接 LVGL
@@ -117,7 +148,7 @@ set_target_properties(${PROJECT_NAME}.elf PROPERTIES
 
 # 后处理：生成 HEX, BIN
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.hex
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.bin
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE_NAME:${PROJECT_NAME}.elf> ${PROJECT_NAME}.hex
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE_NAME:${PROJECT_NAME}.elf> ${PROJECT_NAME}.bin
     COMMENT "Generating HEX and BIN files"
 )
