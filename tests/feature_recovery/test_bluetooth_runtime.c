@@ -2,6 +2,7 @@
 #include "usart.h"
 
 #include <assert.h>
+#include <stddef.h>
 
 GPIO_TypeDef test_gpiof;
 GPIO_TypeDef test_uart4_instance;
