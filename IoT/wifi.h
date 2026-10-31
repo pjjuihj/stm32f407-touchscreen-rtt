@@ -10,7 +10,8 @@
 #include <stdint.h>
 
 #define WIFI_TCP_HOST_MAX_LENGTH 63U
-#define WIFI_TCP_MAX_PAYLOAD_LENGTH 256U
+#define WIFI_TCP_MAX_PAYLOAD_LENGTH 768U
+#define WIFI_TCP_RX_CAPACITY 2048U
 
 typedef enum {
     WIFI_TCP_OPERATION_IDLE = 0,
@@ -65,9 +66,12 @@ bool WiFi_RequestTcpModeCheck(void);
 bool WiFi_RequestDnsStatusCheck(void);
 bool WiFi_RequestDnsGatewayUse(void);
 bool WiFi_RequestModuleVersionCheck(void);
+bool WiFi_RequestMqttCapabilityCheck(void);
 bool WiFi_TcpConnect(const char *host, uint16_t port);
 bool WiFi_Ping(const char *host);
 bool WiFi_TcpSend(const uint8_t *data, size_t length);
+size_t WiFi_TcpRead(uint8_t *output, size_t capacity);
+bool WiFi_TakeTcpRxOverflow(void);
 bool WiFi_TcpClose(void);
 bool WiFi_TakeTcpOperationResult(WiFiTcpOperationResult *result);
 WiFiClearResult WiFi_ClearCredentials(void);
@@ -75,6 +79,7 @@ void WiFi_Disconnect(void);
 WiFiStatus WiFi_GetStatus(void);
 WiFiAtTcpStatus WiFi_GetTcpStatus(void);
 bool WiFi_GetRuntimeInfo(WiFiRuntimeInfo *info);
+bool WiFi_GetStationIp(char *output, size_t capacity);
 bool WiFi_IsConnected(void);
 void WiFi_UART_RxComplete(UART_HandleTypeDef *uart);
 void WiFi_UART_TxComplete(void);

@@ -31,6 +31,32 @@ set(LV_USE_NATIVE_HELIUM_ASM OFF CACHE BOOL "" FORCE)
 set(LV_USE_NATIVE_NEON_ASM OFF CACHE BOOL "" FORCE)
 set(LV_USE_NATIVE_RISCV_ASM OFF CACHE BOOL "" FORCE)
 
+option(IOT_AUTO_TCP_DIAGNOSTIC_ENABLE
+       "Enable the existing automatic one-shot TCP diagnostic" OFF)
+option(IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE
+       "Query the read-only ESP AT command inventory for MQTT after module sync" OFF)
+option(IOT_MQTT_ENABLE "Enable the F407-side MQTT 3.1.1 client" ON)
+set(IOT_MQTT_BROKER_HOST "192.168.137.1" CACHE STRING
+    "IPv4 address of the local MQTT broker")
+set(IOT_MQTT_BROKER_PORT "1883" CACHE STRING
+    "TCP port of the local MQTT broker")
+
+if(NOT IOT_MQTT_BROKER_PORT MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "IOT_MQTT_BROKER_PORT must be an integer from 1 to 65535")
+endif()
+if(IOT_MQTT_BROKER_PORT LESS 1 OR IOT_MQTT_BROKER_PORT GREATER 65535)
+    message(FATAL_ERROR "IOT_MQTT_BROKER_PORT must be an integer from 1 to 65535")
+endif()
+
+# The capability-only diagnostic and MQTT client both own the ESP command path.
+# The production MQTT client also replaces the earlier one-shot TCP diagnostic.
+if(IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE)
+    set(IOT_AUTO_TCP_DIAGNOSTIC_ENABLE OFF)
+    set(IOT_MQTT_ENABLE OFF)
+elseif(IOT_MQTT_ENABLE)
+    set(IOT_AUTO_TCP_DIAGNOSTIC_ENABLE OFF)
+endif()
+
 # This checkout contains LVGL's source tree but not its optional env_support
 # CMake integration directory. Build the portable C sources directly instead
 # of relying on the missing desktop-only helper.
@@ -73,12 +99,21 @@ set(USER_SOURCES
     IoT/wifi_at.c
     IoT/wifi_state.c
     IoT/wifi_uart_rx_recovery.c
+    IoT/wifi_tcp_ipd_parser.c
     SEGGER_RTT/RTT/SEGGER_RTT.c
     SEGGER_RTT/Sys/SEGGER_SYSVIEW.c
     Common/common.c
     Startup_config/system_stm32f4xx.c
     Startup_config/stm32f4xx_hal_msp.c
 )
+
+if(IOT_MQTT_ENABLE)
+    list(APPEND USER_SOURCES
+        IoT/mqtt_wire.c
+        IoT/mqtt_json.c
+        IoT/mqtt_client.c
+    )
+endif()
 
 # 启动文件
 set(STARTUP_SOURCES
@@ -96,6 +131,7 @@ set(HAL_SOURCES
     STM32F4xx_HAL_Driver/src/stm32f4xx_hal_rcc_ex.c
     STM32F4xx_HAL_Driver/src/stm32f4xx_hal_dma.c
     STM32F4xx_HAL_Driver/src/stm32f4xx_hal_dma_ex.c
+    STM32F4xx_HAL_Driver/src/stm32f4xx_hal_rng.c
     STM32F4xx_HAL_Driver/src/stm32f4xx_hal_uart.c
     STM32F4xx_HAL_Driver/src/stm32f4xx_hal_sram.c
     STM32F4xx_HAL_Driver/src/stm32f4xx_ll_fsmc.c
@@ -132,10 +168,12 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     SEGGER_RTT/Sys
 )
 
-# Enable the requested automatic one-shot TCP command for the F407 firmware.
-# The source keeps this diagnostic feature disabled for builds that do not opt in.
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
-    IOT_AUTO_TCP_DIAGNOSTIC_ENABLE=1
+    IOT_AUTO_TCP_DIAGNOSTIC_ENABLE=$<BOOL:${IOT_AUTO_TCP_DIAGNOSTIC_ENABLE}>
+    IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE=$<BOOL:${IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE}>
+    IOT_MQTT_ENABLE=$<BOOL:${IOT_MQTT_ENABLE}>
+    IOT_MQTT_BROKER_HOST=\"${IOT_MQTT_BROKER_HOST}\"
+    IOT_MQTT_BROKER_PORT=${IOT_MQTT_BROKER_PORT}
 )
 
 # 链接 LVGL

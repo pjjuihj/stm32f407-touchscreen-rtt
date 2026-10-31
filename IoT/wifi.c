@@ -1,4 +1,5 @@
 #include "wifi.h"
+#include "wifi_tcp_ipd_parser.h"
 #include "wifi_uart_rx_recovery.h"
 
 #include "usart.h"
@@ -16,10 +17,17 @@
 #define WIFI_TCP_SEND_TIMEOUT_MS 10000U
 #define WIFI_PING_TIMEOUT_MS 10000U
 #define WIFI_QUERY_TIMEOUT_MS 1200U
+#define WIFI_MQTT_CAPABILITY_TIMEOUT_MS 10000U
 #define WIFI_SYNC_RETRY_MS 1000U
 #define WIFI_IP_QUERY_RETRY_MS 1000U
 #define WIFI_IP_QUERY_MAX_ATTEMPTS 5U
 #define WIFI_TCP_DETAIL_CAPACITY 96U
+#define WIFI_MQTT_CAPABILITY_COMMAND_COUNT 8U
+#define WIFI_MQTT_CAPABILITY_LINE_CAPACITY 128U
+
+#ifndef IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE
+#define IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE 0
+#endif
 
 typedef enum {
     WIFI_PHASE_PROBE_SEND = 0,
@@ -96,6 +104,8 @@ typedef enum {
     WIFI_PHASE_SYNC_RETRY_WAIT,
     WIFI_PHASE_MODULE_VERSION_QUERY_SEND,
     WIFI_PHASE_MODULE_VERSION_QUERY_WAIT,
+    WIFI_PHASE_MQTT_CAPABILITY_QUERY_SEND,
+    WIFI_PHASE_MQTT_CAPABILITY_QUERY_WAIT,
     WIFI_PHASE_TX_FAULT
 } WiFiPhase;
 
@@ -129,6 +139,12 @@ typedef struct {
     volatile uint16_t rx_head;
     volatile uint16_t rx_tail;
     volatile uint8_t rx_overflow;
+    WifiTcpIpdParser tcp_ipd_parser;
+    uint8_t tcp_rx_data[WIFI_TCP_RX_CAPACITY];
+    uint16_t tcp_rx_head;
+    uint16_t tcp_rx_tail;
+    uint8_t tcp_rx_overflow;
+    uint8_t response_overflow;
     uint8_t query_result_ready;
     uint8_t status_check_pending;
     uint8_t tcp_query_result_ready;
@@ -137,6 +153,16 @@ typedef struct {
     uint8_t dns_query_pending;
     uint8_t dns_gateway_pending;
     uint8_t tcp_operation_result_ready;
+    uint8_t mqtt_capability_seen_mask;
+    uint8_t mqtt_capability_test_mask;
+    uint8_t mqtt_capability_query_mask;
+    uint8_t mqtt_capability_set_mask;
+    uint8_t mqtt_capability_execute_mask;
+    uint8_t mqtt_capability_invalid;
+    uint8_t mqtt_capability_terminal;
+    uint8_t mqtt_capability_line_length;
+    uint8_t mqtt_capability_line_overflow;
+    uint8_t mqtt_capability_auto_started;
     uint8_t clear_pending;
     uint8_t clear_command_started;
     uint8_t connect_pending;
@@ -150,10 +176,12 @@ typedef struct {
     uint8_t persist_abort_requested;
     uint8_t sync_started;
     uint16_t response_length;
+    uint16_t mqtt_capability_inventory_rows;
     uint16_t tcp_payload_length;
     uint16_t tcp_port;
     WiFiTcpOperationResult tcp_operation_result;
     char response[WIFI_RESPONSE_CAPACITY];
+    char mqtt_capability_line[WIFI_MQTT_CAPABILITY_LINE_CAPACITY];
     char tx_command[WIFI_COMMAND_CAPACITY];
     char ssid[33];
     char password[65];
@@ -170,6 +198,16 @@ typedef struct {
 
 static WiFiContext g_wifi;
 static const char *g_connect_reject_reason = "NOT_REJECTED";
+static const char *const g_mqtt_capability_names[WIFI_MQTT_CAPABILITY_COMMAND_COUNT] = {
+    "AT+MQTTUSERCFG",
+    "AT+MQTTCONNCFG",
+    "AT+MQTTCONN",
+    "AT+MQTTPUB",
+    "AT+MQTTPUBRAW",
+    "AT+MQTTSUB",
+    "AT+MQTTUNSUB",
+    "AT+MQTTCLEAN"
+};
 
 static void SecureClear(void *buffer, size_t length)
 {
@@ -456,6 +494,235 @@ static void ClearResponse(void)
     g_wifi.response_length = 0U;
 }
 
+static void ClearTcpRxQueue(void)
+{
+    SecureClear(g_wifi.tcp_rx_data, sizeof(g_wifi.tcp_rx_data));
+    g_wifi.tcp_rx_head = 0U;
+    g_wifi.tcp_rx_tail = 0U;
+    g_wifi.tcp_rx_overflow = 0U;
+    WifiTcpIpdParser_Init(&g_wifi.tcp_ipd_parser);
+}
+
+static void ResetMqttCapabilityInventory(void)
+{
+    g_wifi.mqtt_capability_seen_mask = 0U;
+    g_wifi.mqtt_capability_test_mask = 0U;
+    g_wifi.mqtt_capability_query_mask = 0U;
+    g_wifi.mqtt_capability_set_mask = 0U;
+    g_wifi.mqtt_capability_execute_mask = 0U;
+    g_wifi.mqtt_capability_invalid = 0U;
+    g_wifi.mqtt_capability_terminal = 0U;
+    g_wifi.mqtt_capability_line_length = 0U;
+    g_wifi.mqtt_capability_line_overflow = 0U;
+    g_wifi.mqtt_capability_inventory_rows = 0U;
+    SecureClear(g_wifi.mqtt_capability_line, sizeof(g_wifi.mqtt_capability_line));
+}
+
+static void SkipMqttCapabilityWhitespace(const char *line, size_t length,
+                                         size_t *offset)
+{
+    while (*offset < length && isspace((unsigned char)line[*offset])) {
+        ++(*offset);
+    }
+}
+
+static bool ReadMqttCapabilityFlag(const char *line, size_t length,
+                                   size_t *offset, uint8_t *flag)
+{
+    SkipMqttCapabilityWhitespace(line, length, offset);
+    if (*offset >= length || (line[*offset] != '0' && line[*offset] != '1')) {
+        return false;
+    }
+    *flag = (uint8_t)(line[*offset] - '0');
+    ++(*offset);
+    return true;
+}
+
+static bool ParseMqttCapabilityInventoryLine(const char *line, size_t length)
+{
+    uint8_t flags[4];
+    size_t offset = 5U;
+    size_t index_start;
+    size_t name_start;
+    size_t name_length;
+    uint32_t reported_index = 0U;
+    size_t mqtt_command_index;
+    size_t flag_index;
+
+    if (length < 5U || memcmp(line, "+CMD:", 5U) != 0) {
+        return true;
+    }
+
+    index_start = offset;
+    while (offset < length && line[offset] >= '0' && line[offset] <= '9') {
+        uint32_t digit = (uint32_t)(line[offset] - '0');
+        if (reported_index > (UINT16_MAX - digit) / 10U) {
+            return false;
+        }
+        reported_index = (reported_index * 10U) + digit;
+        ++offset;
+    }
+    if (offset == index_start || offset >= length || line[offset] != ',') {
+        return false;
+    }
+    ++offset;
+    SkipMqttCapabilityWhitespace(line, length, &offset);
+    if (offset >= length) {
+        return false;
+    }
+    if (line[offset] == '"') {
+        name_start = ++offset;
+        while (offset < length && line[offset] != '"') {
+            ++offset;
+        }
+        if (offset >= length) {
+            return false;
+        }
+        name_length = offset - name_start;
+        ++offset;
+    } else {
+        name_start = offset;
+        while (offset < length && line[offset] != ',') {
+            ++offset;
+        }
+        if (offset >= length) {
+            return false;
+        }
+        name_length = offset - name_start;
+        while (name_length > 0U &&
+               isspace((unsigned char)line[name_start + name_length - 1U])) {
+            --name_length;
+        }
+        if (name_length == 0U) {
+            return false;
+        }
+    }
+    SkipMqttCapabilityWhitespace(line, length, &offset);
+    if (offset >= length || line[offset] != ',') {
+        return false;
+    }
+    ++offset;
+
+    for (flag_index = 0U; flag_index < 4U; ++flag_index) {
+        if (!ReadMqttCapabilityFlag(line, length, &offset, &flags[flag_index])) {
+            return false;
+        }
+        SkipMqttCapabilityWhitespace(line, length, &offset);
+        if (flag_index < 3U) {
+            if (offset >= length || line[offset] != ',') {
+                return false;
+            }
+            ++offset;
+        }
+    }
+    if (offset != length) {
+        return false;
+    }
+    if (g_wifi.mqtt_capability_inventory_rows == UINT16_MAX ||
+        reported_index != g_wifi.mqtt_capability_inventory_rows) {
+        return false;
+    }
+    ++g_wifi.mqtt_capability_inventory_rows;
+
+    for (mqtt_command_index = 0U;
+         mqtt_command_index < WIFI_MQTT_CAPABILITY_COMMAND_COUNT;
+         ++mqtt_command_index) {
+        size_t expected_length = strlen(g_mqtt_capability_names[mqtt_command_index]);
+        uint8_t mask = (uint8_t)(1U << mqtt_command_index);
+        if (name_length != expected_length ||
+            memcmp(&line[name_start], g_mqtt_capability_names[mqtt_command_index],
+                   expected_length) != 0) {
+            continue;
+        }
+
+        if ((g_wifi.mqtt_capability_seen_mask & mask) != 0U &&
+            (((g_wifi.mqtt_capability_test_mask & mask) != 0U) != (flags[0] != 0U) ||
+             ((g_wifi.mqtt_capability_query_mask & mask) != 0U) != (flags[1] != 0U) ||
+             ((g_wifi.mqtt_capability_set_mask & mask) != 0U) != (flags[2] != 0U) ||
+             ((g_wifi.mqtt_capability_execute_mask & mask) != 0U) != (flags[3] != 0U))) {
+            return false;
+        }
+        g_wifi.mqtt_capability_seen_mask |= mask;
+        if (flags[0] != 0U) {
+            g_wifi.mqtt_capability_test_mask |= mask;
+        }
+        if (flags[1] != 0U) {
+            g_wifi.mqtt_capability_query_mask |= mask;
+        }
+        if (flags[2] != 0U) {
+            g_wifi.mqtt_capability_set_mask |= mask;
+        }
+        if (flags[3] != 0U) {
+            g_wifi.mqtt_capability_execute_mask |= mask;
+        }
+        break;
+    }
+    return true;
+}
+
+static void ConsumeMqttCapabilityByte(uint8_t byte)
+{
+    size_t length;
+    size_t trim_start;
+    size_t trim_end;
+
+    if (g_wifi.mqtt_capability_terminal != 0U) {
+        return;
+    }
+    if (byte == '\n') {
+        length = g_wifi.mqtt_capability_line_length;
+        if (g_wifi.mqtt_capability_line_overflow != 0U) {
+            g_wifi.mqtt_capability_invalid = 1U;
+        } else {
+            while (length > 0U &&
+                   isspace((unsigned char)g_wifi.mqtt_capability_line[length - 1U])) {
+                --length;
+            }
+            trim_start = 0U;
+            while (trim_start < length &&
+                   isspace((unsigned char)g_wifi.mqtt_capability_line[trim_start])) {
+                ++trim_start;
+            }
+            trim_end = length;
+            g_wifi.mqtt_capability_line[trim_end] = '\0';
+            if (trim_end - trim_start == 2U &&
+                memcmp(&g_wifi.mqtt_capability_line[trim_start], "OK", 2U) == 0) {
+                g_wifi.mqtt_capability_terminal = 1U;
+            } else if ((trim_end - trim_start >= 5U &&
+                        memcmp(&g_wifi.mqtt_capability_line[trim_start], "ERROR", 5U) == 0) ||
+                       (trim_end - trim_start >= 4U &&
+                        memcmp(&g_wifi.mqtt_capability_line[trim_start], "FAIL", 4U) == 0)) {
+                g_wifi.mqtt_capability_terminal = 2U;
+            } else if (trim_end - trim_start >= 5U &&
+                       memcmp(&g_wifi.mqtt_capability_line[trim_start], "+CMD:", 5U) == 0) {
+                if (!ParseMqttCapabilityInventoryLine(
+                        &g_wifi.mqtt_capability_line[trim_start], trim_end - trim_start)) {
+                    g_wifi.mqtt_capability_invalid = 1U;
+                }
+            } else if (trim_end - trim_start >= 4U &&
+                       memcmp(&g_wifi.mqtt_capability_line[trim_start], "+CMD", 4U) == 0) {
+                g_wifi.mqtt_capability_invalid = 1U;
+            }
+        }
+        SecureClear(g_wifi.mqtt_capability_line, sizeof(g_wifi.mqtt_capability_line));
+        g_wifi.mqtt_capability_line_length = 0U;
+        g_wifi.mqtt_capability_line_overflow = 0U;
+        return;
+    }
+
+    if (byte != '\r' && byte != '\t' && (byte < 0x20U || byte > 0x7eU)) {
+        g_wifi.mqtt_capability_invalid = 1U;
+        return;
+    }
+    if (g_wifi.mqtt_capability_line_length >=
+        sizeof(g_wifi.mqtt_capability_line) - 1U) {
+        g_wifi.mqtt_capability_line_overflow = 1U;
+        g_wifi.mqtt_capability_invalid = 1U;
+        return;
+    }
+    g_wifi.mqtt_capability_line[g_wifi.mqtt_capability_line_length++] = (char)byte;
+}
+
 static void DiscardPendingRx(void)
 {
     uint32_t primask = __get_PRIMASK();
@@ -466,30 +733,69 @@ static void DiscardPendingRx(void)
     __set_PRIMASK(primask);
 }
 
+static void ConsumeAtStreamByte(void *context, uint8_t byte)
+{
+    WiFiContext *wifi = (WiFiContext *)context;
+
+    if (wifi->phase == WIFI_PHASE_MQTT_CAPABILITY_QUERY_WAIT) {
+        ConsumeMqttCapabilityByte(byte);
+        return;
+    }
+    if (wifi->response_length >= sizeof(wifi->response) - 1U) {
+        wifi->response_overflow = 1U;
+        return;
+    }
+    wifi->response[wifi->response_length++] = (char)byte;
+    wifi->response[wifi->response_length] = '\0';
+}
+
+static void QueueTcpPayloadByte(void *context, uint8_t link_id, uint8_t byte)
+{
+    WiFiContext *wifi = (WiFiContext *)context;
+    uint16_t next_head;
+
+    if (link_id != 0U || wifi->tcp_rx_overflow != 0U) {
+        return;
+    }
+    next_head = (uint16_t)((wifi->tcp_rx_head + 1U) % WIFI_TCP_RX_CAPACITY);
+    if (next_head == wifi->tcp_rx_tail) {
+        wifi->tcp_rx_overflow = 1U;
+        return;
+    }
+    wifi->tcp_rx_data[wifi->tcp_rx_head] = byte;
+    wifi->tcp_rx_head = next_head;
+}
+
 static void DrainWifiRx(void)
 {
     uint16_t processed = 0U;
 
     if (g_wifi.rx_overflow != 0U) {
+        if (g_wifi.phase == WIFI_PHASE_MQTT_CAPABILITY_QUERY_WAIT) {
+            g_wifi.mqtt_capability_invalid = 1U;
+        }
         DiscardPendingRx();
         ClearResponse();
+        ClearTcpRxQueue();
+        g_wifi.tcp_rx_overflow = 1U;
         return;
     }
     while (g_wifi.rx_tail != g_wifi.rx_head && processed < WIFI_RX_DRAIN_BUDGET) {
         uint8_t byte = g_wifi.rx_data[g_wifi.rx_tail];
         g_wifi.rx_data[g_wifi.rx_tail] = 0U;
         g_wifi.rx_tail = (uint16_t)((g_wifi.rx_tail + 1U) % WIFI_RX_CAPACITY);
-        if (g_wifi.response_length >= sizeof(g_wifi.response) - 1U) {
+        WifiTcpIpdParser_Feed(&g_wifi.tcp_ipd_parser, byte,
+                              ConsumeAtStreamByte, QueueTcpPayloadByte, &g_wifi);
+        ++processed;
+        if (g_wifi.response_overflow != 0U || g_wifi.rx_overflow != 0U) {
+            if (g_wifi.phase == WIFI_PHASE_MQTT_CAPABILITY_QUERY_WAIT) {
+                g_wifi.mqtt_capability_invalid = 1U;
+            }
+            g_wifi.response_overflow = 0U;
             DiscardPendingRx();
+            ClearTcpRxQueue();
+            g_wifi.tcp_rx_overflow = 1U;
             wifi_uart_rx_recovery_discard_partial_line(&g_wifi.rx_recovery);
-            ClearResponse();
-            return;
-        }
-        g_wifi.response[g_wifi.response_length++] = (char)byte;
-        g_wifi.response[g_wifi.response_length] = '\0';
-        processed++;
-        if (g_wifi.rx_overflow != 0U) {
-            DiscardPendingRx();
             ClearResponse();
             return;
         }
@@ -510,6 +816,65 @@ static bool RearmWifiRx(void *context)
 static void ReportFixed(const char *message)
 {
     USART1_SendString(message);
+}
+
+static const char *MqttCapabilityFormState(uint8_t seen_mask, uint8_t form_mask,
+                                          uint8_t index)
+{
+    uint8_t mask = (uint8_t)(1U << index);
+    if ((seen_mask & mask) == 0U) {
+        return "NOT_LISTED";
+    }
+    return (form_mask & mask) != 0U ? "YES" : "NO";
+}
+
+static void ReportMqttCapabilityResult(void)
+{
+    char message[320];
+    int length;
+
+    if (g_wifi.mqtt_capability_invalid != 0U) {
+        ReportFixed("WIFI MQTT AT INVENTORY: UNKNOWN REASON=INVALID_OR_TRUNCATED\r\n");
+    } else if (g_wifi.mqtt_capability_terminal == 2U) {
+        ReportFixed("WIFI MQTT AT INVENTORY: UNKNOWN REASON=QUERY_REJECTED_OR_UNSUPPORTED\r\n");
+    } else if (g_wifi.mqtt_capability_terminal != 1U) {
+        ReportFixed("WIFI MQTT AT INVENTORY: UNKNOWN REASON=NO_COMPLETE_INVENTORY\r\n");
+    } else if (g_wifi.mqtt_capability_inventory_rows == 0U) {
+        ReportFixed("WIFI MQTT AT INVENTORY: UNKNOWN REASON=EMPTY_INVENTORY\r\n");
+    } else {
+        length = snprintf(message, sizeof(message),
+                           "WIFI MQTT AT INVENTORY: COMPLETE "
+                           "USERCFG_SET=%s CONNCFG_SET=%s CONN_SET=%s CONN_QUERY=%s "
+                           "PUB_SET=%s PUBRAW_SET=%s SUB_SET=%s UNSUB_SET=%s "
+                           "CLEAN_SET=%s RX=UNVERIFIED\r\n",
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 0U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 1U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 2U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_query_mask, 2U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 3U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 4U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 5U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 6U),
+                           MqttCapabilityFormState(g_wifi.mqtt_capability_seen_mask,
+                                                   g_wifi.mqtt_capability_set_mask, 7U));
+        if (length > 0 && (size_t)length < sizeof(message)) {
+            ReportFixed(message);
+        } else {
+            ReportFixed("WIFI MQTT AT INVENTORY: FORMAT_ERROR\r\n");
+        }
+    }
+    SecureClear(message, sizeof(message));
+    SecureClear(g_wifi.mqtt_capability_line, sizeof(g_wifi.mqtt_capability_line));
+    g_wifi.mqtt_capability_line_length = 0U;
+    g_wifi.mqtt_capability_line_overflow = 0U;
 }
 
 static void ReportVolatileStorageFailure(void)
@@ -852,6 +1217,9 @@ static void FinishTcpClose(bool closed)
                                  : WIFI_TCP_OPERATION_FAILED);
     g_wifi.phase = WIFI_PHASE_IDLE;
     ClearResponse();
+    if (closed) {
+        ClearTcpRxQueue();
+    }
     ReportFixed(closed ? "WIFI TCP: CLOSED\r\n" : "WIFI TCP: CLOSE_FAILED\r\n");
 }
 
@@ -1198,6 +1566,7 @@ void WiFi_ModuleEnableHold(void)
 void WiFi_Init(void)
 {
     SecureClear(&g_wifi, sizeof(g_wifi));
+    WifiTcpIpdParser_Init(&g_wifi.tcp_ipd_parser);
     g_connect_reject_reason = "NOT_REJECTED";
     WiFiState_Init(&g_wifi.state);
     WiFiState_BeginSync(&g_wifi.state);
@@ -1557,6 +1926,19 @@ bool WiFi_RequestModuleVersionCheck(void)
     return true;
 }
 
+bool WiFi_RequestMqttCapabilityCheck(void)
+{
+    if (g_wifi.dialect == WIFI_AT_DIALECT_UNKNOWN ||
+        g_wifi.phase != WIFI_PHASE_IDLE || g_wifi.tx_active != 0U ||
+        g_wifi.clear_pending != 0U || g_wifi.connect_pending != 0U) {
+        return false;
+    }
+    ResetMqttCapabilityInventory();
+    g_wifi.phase = WIFI_PHASE_MQTT_CAPABILITY_QUERY_SEND;
+    ReportFixed("WIFI MQTT AT INVENTORY: QUERY_ONLY STARTED\r\n");
+    return true;
+}
+
 WiFiStatus WiFi_GetStatus(void)
 {
     return g_wifi.state.status;
@@ -1579,6 +1961,25 @@ bool WiFi_GetRuntimeInfo(WiFiRuntimeInfo *info)
     info->ip = g_wifi.ip;
     info->tcp = g_wifi.tcp_status;
     info->network = g_wifi.network;
+    return true;
+}
+
+bool WiFi_GetStationIp(char *output, size_t capacity)
+{
+    size_t length;
+
+    if (output == NULL || capacity == 0U) {
+        return false;
+    }
+    output[0] = '\0';
+    if (g_wifi.ip != WIFI_IP_READY || g_wifi.station_ip[0] == '\0') {
+        return false;
+    }
+    length = strlen(g_wifi.station_ip);
+    if (length >= capacity) {
+        return false;
+    }
+    memcpy(output, g_wifi.station_ip, length + 1U);
     return true;
 }
 
@@ -1605,6 +2006,7 @@ bool WiFi_TcpConnect(const char *host, uint16_t port)
     if (!built) {
         return false;
     }
+    ClearTcpRxQueue();
     SecureClear(g_wifi.tcp_host, sizeof(g_wifi.tcp_host));
     memcpy(g_wifi.tcp_host, host, strlen(host));
     g_wifi.tcp_port = port;
@@ -1651,6 +2053,29 @@ bool WiFi_TcpSend(const uint8_t *data, size_t length)
     g_wifi.tcp_operation_result_ready = 0U;
     g_wifi.phase = WIFI_PHASE_TCP_SEND_COMMAND_SEND;
     return true;
+}
+
+size_t WiFi_TcpRead(uint8_t *output, size_t capacity)
+{
+    size_t count = 0U;
+
+    if (output == NULL || capacity == 0U) {
+        return 0U;
+    }
+    while (g_wifi.tcp_rx_tail != g_wifi.tcp_rx_head && count < capacity) {
+        output[count++] = g_wifi.tcp_rx_data[g_wifi.tcp_rx_tail];
+        g_wifi.tcp_rx_data[g_wifi.tcp_rx_tail] = 0U;
+        g_wifi.tcp_rx_tail =
+            (uint16_t)((g_wifi.tcp_rx_tail + 1U) % WIFI_TCP_RX_CAPACITY);
+    }
+    return count;
+}
+
+bool WiFi_TakeTcpRxOverflow(void)
+{
+    bool overflow = g_wifi.tcp_rx_overflow != 0U;
+    g_wifi.tcp_rx_overflow = 0U;
+    return overflow;
 }
 
 bool WiFi_TcpClose(void)
@@ -1811,9 +2236,37 @@ static void ProcessSync(uint32_t now)
     case WIFI_PHASE_PROBE_WAIT:
         if (Contains(g_wifi.response, g_wifi.response_length, "OK\r\n")) {
             ClearResponse();
+#if IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE
+            /* The capability image performs only AT and AT+CMD?; do not run
+               normal sync, which may change the ESP station/AP mode. */
+            g_wifi.sync_started = 0U;
+            g_wifi.mqtt_capability_auto_started = 1U;
+            WiFiState_SetUnknown(&g_wifi.state);
+            g_wifi.phase = WIFI_PHASE_MQTT_CAPABILITY_QUERY_SEND;
+#else
             g_wifi.phase = WIFI_PHASE_MODERN_MODE_SEND;
+#endif
+#if IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE
+        } else if (HasTerminalResponse() &&
+                   (Contains(g_wifi.response, g_wifi.response_length, "ERROR") ||
+                    Contains(g_wifi.response, g_wifi.response_length, "FAIL"))) {
+            ClearResponse();
+            g_wifi.sync_started = 0U;
+            g_wifi.mqtt_capability_auto_started = 1U;
+            WiFiState_SetUnknown(&g_wifi.state);
+            g_wifi.phase = WIFI_PHASE_IDLE;
+            ReportFixed("WIFI MQTT AT INVENTORY: UNKNOWN REASON=AT_PROBE_REJECTED\r\n");
+        } else if ((int32_t)(now - g_wifi.deadline) >= 0) {
+            ClearResponse();
+            g_wifi.sync_started = 0U;
+            g_wifi.mqtt_capability_auto_started = 1U;
+            WiFiState_SetUnknown(&g_wifi.state);
+            g_wifi.phase = WIFI_PHASE_IDLE;
+            ReportFixed("WIFI MQTT AT INVENTORY: UNKNOWN REASON=AT_PROBE_TIMEOUT\r\n");
+#else
         } else if ((int32_t)(now - g_wifi.deadline) >= 0) {
             ScheduleSyncRetry(now);
+#endif
         }
         break;
     case WIFI_PHASE_MODERN_MODE_SEND:
@@ -2558,7 +3011,21 @@ static void ProcessMaintenance(uint32_t now)
     WiFiAtDnsInfo dns_info;
     bool built;
 
-    if (g_wifi.phase == WIFI_PHASE_PING_SEND) {
+    if (g_wifi.phase == WIFI_PHASE_MQTT_CAPABILITY_QUERY_SEND) {
+        (void)StartCommand("AT+CMD?\r\n", now,
+                           WIFI_MQTT_CAPABILITY_TIMEOUT_MS,
+                           WIFI_PHASE_MQTT_CAPABILITY_QUERY_WAIT);
+    } else if (g_wifi.phase == WIFI_PHASE_MQTT_CAPABILITY_QUERY_WAIT) {
+        if (g_wifi.mqtt_capability_terminal != 0U) {
+            g_wifi.phase = WIFI_PHASE_IDLE;
+            ClearResponse();
+            ReportMqttCapabilityResult();
+        } else if ((int32_t)(now - g_wifi.deadline) >= 0) {
+            g_wifi.phase = WIFI_PHASE_IDLE;
+            ClearResponse();
+            ReportMqttCapabilityResult();
+        }
+    } else if (g_wifi.phase == WIFI_PHASE_PING_SEND) {
         built = WiFiAT_BuildPingCommand(g_wifi.dialect, g_wifi.ping_host,
                                         command, sizeof(command));
         if (!built) {
@@ -3008,6 +3475,7 @@ void WiFi_Process(void)
         ClearStationIpAddress();
         ClearStationLinkInfo();
         g_wifi.tcp_status = WIFI_AT_TCP_UNKNOWN;
+        ClearTcpRxQueue();
         g_wifi.network = WIFI_NETWORK_NOT_RUN;
         CompleteStatusCheck();
         ReportFixed("WIFI EVENT: DISCONNECTED\r\n");
@@ -3062,6 +3530,17 @@ void WiFi_Process(void)
         g_wifi.phase = WIFI_PHASE_PROBE_SEND;
         WiFiState_BeginSync(&g_wifi.state);
     }
+
+#if IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE
+    if (g_wifi.phase == WIFI_PHASE_IDLE &&
+        g_wifi.dialect != WIFI_AT_DIALECT_UNKNOWN &&
+        g_wifi.clear_pending == 0U && g_wifi.connect_pending == 0U &&
+        g_wifi.mqtt_capability_auto_started == 0U) {
+        if (WiFi_RequestMqttCapabilityCheck()) {
+            g_wifi.mqtt_capability_auto_started = 1U;
+        }
+    }
+#endif
 
     if (g_wifi.phase <= WIFI_PHASE_IP_QUERY_RETRY_WAIT ||
         g_wifi.phase == WIFI_PHASE_SYNC_RETRY_WAIT) {
