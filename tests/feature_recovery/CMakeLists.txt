@@ -15,6 +15,10 @@ foreach(source_header IN ITEMS
         ../../IoT/wifi_state.c ../../IoT/wifi_state.h
         ../../IoT/wifi.c ../../IoT/wifi.h
         ../../IoT/wifi_uart_rx_recovery.c ../../IoT/wifi_uart_rx_recovery.h
+        ../../IoT/wifi_tcp_ipd_parser.c ../../IoT/wifi_tcp_ipd_parser.h
+        ../../IoT/mqtt_client.c ../../IoT/mqtt_client.h
+        ../../IoT/mqtt_json.c ../../IoT/mqtt_json.h
+        ../../IoT/mqtt_wire.c ../../IoT/mqtt_wire.h
         ../../IoT/iot.c ../../IoT/iot.h
         ../../IoT/bluetooth.c ../../IoT/bluetooth.h
         ../../IoT/bluetooth_command_parser.c ../../IoT/bluetooth_command_parser.h
@@ -63,6 +67,13 @@ add_executable(test_wifi_uart_rx_recovery
 target_include_directories(test_wifi_uart_rx_recovery PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
 add_test(NAME wifi_uart_rx_recovery COMMAND test_wifi_uart_rx_recovery)
 
+add_executable(test_wifi_tcp_ipd_parser
+    test_wifi_tcp_ipd_parser.c
+    "${CMAKE_CURRENT_BINARY_DIR}/src/wifi_tcp_ipd_parser.c"
+)
+target_include_directories(test_wifi_tcp_ipd_parser PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
+add_test(NAME wifi_tcp_ipd_parser COMMAND test_wifi_tcp_ipd_parser)
+
 add_executable(test_iot_layout test_iot_layout.c)
 target_include_directories(test_iot_layout PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
 add_test(NAME iot_layout COMMAND test_iot_layout)
@@ -101,11 +112,28 @@ add_executable(test_iot_ble
     "${CMAKE_CURRENT_BINARY_DIR}/src/iot.c"
     "${CMAKE_CURRENT_BINARY_DIR}/src/bluetooth_command_parser.c"
 )
+target_compile_definitions(test_iot_ble PRIVATE IOT_MQTT_ENABLE=0)
 target_include_directories(test_iot_ble PRIVATE
     fakes
     "${CMAKE_CURRENT_BINARY_DIR}/src"
 )
 add_test(NAME iot_ble COMMAND test_iot_ble)
+
+add_executable(test_mqtt_core
+    test_mqtt_core.c
+    "${CMAKE_CURRENT_BINARY_DIR}/src/mqtt_client.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/mqtt_json.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/mqtt_wire.c"
+)
+set_source_files_properties(
+    "${CMAKE_CURRENT_BINARY_DIR}/src/mqtt_client.c"
+    PROPERTIES COMPILE_OPTIONS "-Wno-unused-function"
+)
+target_include_directories(test_mqtt_core PRIVATE
+    fakes
+    "${CMAKE_CURRENT_BINARY_DIR}/src"
+)
+add_test(NAME mqtt_core COMMAND test_mqtt_core)
 
 add_executable(test_iot_auto_tcp
     test_iot_auto_tcp.c
@@ -118,6 +146,7 @@ target_include_directories(test_iot_auto_tcp PRIVATE
 )
 target_compile_definitions(test_iot_auto_tcp PRIVATE
     IOT_AUTO_TCP_DIAGNOSTIC_ENABLE=1
+    IOT_MQTT_ENABLE=0
 )
 add_test(NAME iot_auto_tcp COMMAND test_iot_auto_tcp)
 
@@ -127,6 +156,7 @@ add_executable(test_wifi_takeover
     "${CMAKE_CURRENT_BINARY_DIR}/src/wifi_at.c"
     "${CMAKE_CURRENT_BINARY_DIR}/src/wifi_state.c"
     "${CMAKE_CURRENT_BINARY_DIR}/src/wifi_uart_rx_recovery.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/wifi_tcp_ipd_parser.c"
 )
 target_include_directories(test_wifi_takeover PRIVATE
     fakes
