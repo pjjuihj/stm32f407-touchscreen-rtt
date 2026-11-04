@@ -2,7 +2,7 @@
   'use strict';
 
   const DATABASE_NAME = 'f407-dashboard-history';
-  const DATABASE_VERSION = 1;
+  const DATABASE_VERSION = 2;
   const EVENTS_STORE = 'events';
   const METADATA_STORE = 'metadata';
   const MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -172,9 +172,15 @@
         }
         request.onupgradeneeded = () => {
           const database = request.result;
+          let events;
           if (!database.objectStoreNames.contains(EVENTS_STORE)) {
-            const events = database.createObjectStore(EVENTS_STORE, { keyPath: 'id' });
+            events = database.createObjectStore(EVENTS_STORE, { keyPath: 'id' });
             events.createIndex('receivedAt', 'receivedAt', { unique: false });
+          } else {
+            events = request.transaction.objectStore(EVENTS_STORE);
+          }
+          if (!events.indexNames.contains('dedupeKey')) {
+            events.createIndex('dedupeKey', 'dedupeKey', { unique: false });
           }
           if (!database.objectStoreNames.contains(METADATA_STORE)) {
             database.createObjectStore(METADATA_STORE, { keyPath: 'key' });
@@ -227,7 +233,36 @@
         });
       },
       async put(event) {
-        return transaction(EVENTS_STORE, 'readwrite', (store) => store.put(event));
+        const database = await open();
+        return new Promise((resolve, reject) => {
+          let tx;
+          let accepted = true;
+          try {
+            tx = database.transaction(EVENTS_STORE, 'readwrite');
+            const store = tx.objectStore(EVENTS_STORE);
+            const insert = () => {
+              if (event.dedupeKey) {
+                const lookup = store.index('dedupeKey').getKey(event.dedupeKey);
+                lookup.onsuccess = () => {
+                  if (lookup.result !== undefined) {
+                    accepted = false;
+                    return;
+                  }
+                  store.add(event);
+                };
+              } else {
+                store.add(event);
+              }
+            };
+            insert();
+          } catch (error) {
+            reject(error);
+            return;
+          }
+          tx.oncomplete = () => resolve(accepted);
+          tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
+          tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+        });
       },
       async delete(ids) {
         if (!ids.length) return;
@@ -337,24 +372,39 @@
       const row = sanitizeEvent(event, receivedAt);
       if (!row) return false;
       if (row.dedupeKey && dedupeKeys.has(row.dedupeKey)) return false;
-      rows.push(row);
-      const removed = pruneInMemory(receivedAt);
-      refreshDedupeKeys();
-      const currentCapacityDropped = capacityDropped;
-      writeQueue = writeQueue.then(async () => {
-        if (!persistent) return;
-        try {
-          await backend.put(row);
-          await backend.delete([...removed.expiredIds, ...removed.capacityIds]);
-          if (removed.capacityIds.length) {
-            await backend.putMeta('capacityDropped', currentCapacityDropped);
+      const operation = writeQueue.then(async () => {
+        if (row.dedupeKey && dedupeKeys.has(row.dedupeKey)) return false;
+
+        let persisted = false;
+        if (persistent) {
+          try {
+            if (await backend.put(row) === false) return false;
+            persisted = true;
+          } catch {
+            failStorage('write-failed');
           }
-        } catch {
-          failStorage('write-failed');
         }
-      }).catch(() => failStorage('write-failed'));
-      await writeQueue;
-      return true;
+
+        rows.push(row);
+        const removed = pruneInMemory(receivedAt);
+        refreshDedupeKeys();
+        if (persisted) {
+          try {
+            await backend.delete([...removed.expiredIds, ...removed.capacityIds]);
+            if (removed.capacityIds.length) {
+              await backend.putMeta('capacityDropped', capacityDropped);
+            }
+          } catch {
+            failStorage('write-failed');
+          }
+        }
+        return true;
+      });
+      writeQueue = operation.catch(() => {
+        failStorage('write-failed');
+        return false;
+      });
+      return operation.catch(() => false);
     }
 
     async function list() {

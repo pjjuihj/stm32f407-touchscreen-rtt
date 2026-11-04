@@ -24,7 +24,8 @@ function makeElement() {
   };
 }
 
-async function startDashboard() {
+async function startDashboard({ clock = Date.now() } = {}) {
+  let currentTime = clock;
   const elements = new Map();
   const ledButtons = Array.from({ length: 3 }, () => makeElement());
   const clientHandlers = {};
@@ -42,6 +43,10 @@ async function startDashboard() {
     async record() { return true; }
   };
   const context = {
+    Date: class extends Date {
+      constructor(...args) { super(...(args.length ? args : [currentTime])); }
+      static now() { return currentTime; }
+    },
     document: {
       getElementById(id) {
         if (!elements.has(id)) elements.set(id, makeElement());
@@ -87,7 +92,14 @@ async function startDashboard() {
     remote_control_available: true
   };
   clientHandlers.message('f407/f407-touchscreen-01/state', Buffer.from(JSON.stringify(baseState)), { retain: false });
-  return { clientHandlers, elements, ledButtons, mqttClient, baseState };
+  return {
+    clientHandlers,
+    elements,
+    ledButtons,
+    mqttClient,
+    baseState,
+    advance(ms) { currentTime += ms; }
+  };
 }
 
 test('displays seq-less state but keeps remote commands disabled until a valid seq arrives', async () => {
@@ -105,4 +117,19 @@ test('displays seq-less state but keeps remote commands disabled until a valid s
   assert.equal(elements.get('remote-state').textContent, '可用');
   assert.equal(ledButtons.every((button) => button.disabled), false);
   assert.equal(elements.get('buzzer-button').disabled, false);
+});
+
+test('shows the latest live heartbeat even when it is not persisted as a history sample', async () => {
+  const { clientHandlers, elements, baseState, advance } = await startDashboard({ clock: 1800000000000 });
+  const firstReceipt = elements.get('history-last-live').textContent;
+  assert.notEqual(firstReceipt, '尚无实时状态');
+
+  advance(75000);
+  clientHandlers.message('f407/f407-touchscreen-01/state',
+    Buffer.from(JSON.stringify({ ...baseState, seq: 1, uptime_s: 85 })), { retain: false });
+  const secondReceipt = elements.get('history-last-live').textContent;
+
+  assert.notEqual(secondReceipt, '尚无实时状态');
+  assert.notEqual(secondReceipt, firstReceipt);
+  assert.match(secondReceipt, /0 秒前/);
 });

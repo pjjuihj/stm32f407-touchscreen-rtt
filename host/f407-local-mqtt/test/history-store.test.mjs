@@ -16,7 +16,11 @@ function createMemoryBackend({ failOpen = false, failPut = false } = {}) {
     async getAll() { return [...events.values()].map((event) => structuredClone(event)); },
     async put(event) {
       if (failPut) throw new Error('write failed');
+      if (event.dedupeKey && [...events.values()].some((stored) => stored.dedupeKey === event.dedupeKey)) {
+        return false;
+      }
       events.set(event.id, structuredClone(event));
+      return true;
     },
     async delete(ids) { for (const id of ids) events.delete(id); },
     async getMeta(key) { return metadata.get(key) ?? null; },
@@ -167,6 +171,24 @@ test('keeps dedupe keys across store instances so reloads do not duplicate retai
   const accepted = await reloadedPage.record({ ...stateEvent(200, 1), dedupeKey: 'state:f407-touchscreen-01:0123456789abcdef:1' });
 
   assert.equal(accepted, false);
+  assert.equal((await reloadedPage.list()).length, 1);
+});
+
+test('atomically rejects the same dedupe key written by two page instances', async () => {
+  const backend = createMemoryBackend();
+  const firstPage = create({ backend, now: () => 100 });
+  const secondPage = create({ backend, now: () => 100 });
+  await Promise.all([firstPage.ready, secondPage.ready]);
+  const event = { ...stateEvent(100, 1), dedupeKey: 'state:f407-touchscreen-01:0123456789abcdef:1' };
+
+  const accepted = await Promise.all([
+    firstPage.record(event),
+    secondPage.record(event)
+  ]);
+  const reloadedPage = create({ backend, now: () => 200 });
+  await reloadedPage.ready;
+
+  assert.deepEqual(accepted.sort(), [false, true]);
   assert.equal((await reloadedPage.list()).length, 1);
 });
 

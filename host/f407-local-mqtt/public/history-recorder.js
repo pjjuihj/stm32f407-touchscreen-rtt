@@ -81,8 +81,41 @@
     let stateSnapshotGeneration = 0;
     let storageFallbackRecorded = false;
     const droppedBySession = new Map();
+    const sentinelBoots = new Map();
     let hydrated = !(store && typeof store.list === 'function');
     const pendingObservations = [];
+
+    function updateSentinelBoot(state, receivedAt) {
+      const deviceId = typeof state.device_id === 'string' ? state.device_id : '';
+      const seq = Number.isSafeInteger(state.seq) && state.seq > 0 ? state.seq : null;
+      const uptime = Number.isSafeInteger(state.uptime_s) ? state.uptime_s : null;
+      let boot = sentinelBoots.get(deviceId);
+      let restarted = false;
+      if (!boot) {
+        boot = {
+          seq,
+          uptime,
+          receivedAt
+        };
+      } else {
+        const sequenceRegressed = seq !== null && boot.seq !== null && seq < boot.seq;
+        const uptimeRegressed = uptime !== null && boot.uptime !== null && uptime < boot.uptime;
+        restarted = sequenceRegressed || uptimeRegressed;
+        if (restarted) {
+          boot = {
+            seq,
+            uptime,
+            receivedAt
+          };
+        } else {
+          if (seq !== null && (boot.seq === null || seq >= boot.seq)) boot.seq = seq;
+          if (uptime !== null && (boot.uptime === null || uptime >= boot.uptime)) boot.uptime = uptime;
+          boot.receivedAt = Math.max(boot.receivedAt, receivedAt);
+        }
+      }
+      sentinelBoots.set(deviceId, boot);
+      return { restarted };
+    }
 
     function dispatchObservation(observation) {
       if (hydrated) {
@@ -129,11 +162,12 @@
         return;
       }
 
-      const bootHint = sessionId === '0000000000000000' ? ':' + String(state.uptime_s) : '';
+      const sentinelSession = sessionId === '0000000000000000';
+      const sentinelBoot = sentinelSession ? updateSentinelBoot(state, receivedAt) : null;
       const hasSequence = Number.isSafeInteger(state.seq) && state.seq > 0;
       const stateKey = deviceId + '|' + sessionId + '|' +
-        (hasSequence ? String(state.seq) + bootHint : 'fingerprint:' + fingerprintHash(stateFingerprint(state)));
-      if (hasSequence) {
+        (hasSequence ? String(state.seq) : 'fingerprint:' + fingerprintHash(stateFingerprint(state)));
+      if (hasSequence && !sentinelSession) {
         if (!boundedRemember(liveStateKeys, liveStateQueue, stateKey, MAX_DEDUPE_KEYS)) return;
       }
       snapshotKeys.clear();
@@ -144,7 +178,8 @@
       const isFirst = previous === null;
       const sessionChanged = Boolean(previous &&
         String(previous.session_id).toLowerCase() !== sessionId);
-      const changed = isFirst || sessionChanged || stateFingerprint(previous) !== stateFingerprint(state);
+      const changed = isFirst || sessionChanged || sentinelBoot?.restarted === true ||
+        stateFingerprint(previous) !== stateFingerprint(state);
       const sampleDue = isFirst || lastStateRecordAt === null ||
         receivedAt - lastStateRecordAt >= SAMPLE_INTERVAL_MS;
       const reason = isFirst
@@ -171,7 +206,9 @@
       }
 
       let droppedDelta;
-      if (sessionChanged) droppedBySession.delete(String(previous.session_id).toLowerCase());
+      if (sessionChanged || sentinelBoot?.restarted === true) {
+        droppedBySession.delete(sessionId);
+      }
       const previousDropped = droppedBySession.get(sessionId);
       if (previousDropped !== undefined && state.dropped_snapshots > previousDropped) {
         droppedDelta = state.dropped_snapshots - previousDropped;
@@ -190,8 +227,8 @@
           retained: false,
           countsAsLive: true,
           reason,
-          ...(hasSequence ? {
-            dedupeKey: 'state:' + deviceId + ':' + sessionId + ':' + String(state.seq) + bootHint
+          ...(hasSequence && !sentinelSession ? {
+            dedupeKey: 'state:' + deviceId + ':' + sessionId + ':' + String(state.seq)
           } : {}),
           data
         });
@@ -206,6 +243,9 @@
       if (packet.retain === true) {
         if (lastRetainedAvailability === value) return;
         lastRetainedAvailability = value;
+        if (lastLiveAvailability !== null && lastLiveAvailability !== value) {
+          lastLiveAvailability = null;
+        }
         persist({
           type: 'availability',
           receivedAt,
@@ -297,10 +337,13 @@
         }
         if (event.type === 'state' && event.countsAsLive === true) {
           const state = stateFromEvent(event);
-          const bootHint = state.session_id === '0000000000000000' ? ':' + String(state.uptime_s) : '';
+          const sentinelSession = state.session_id === '0000000000000000';
+          if (sentinelSession) updateSentinelBoot(state, event.receivedAt);
           if (Number.isSafeInteger(state.seq) && state.seq > 0) {
-            const sequenceKey = state.device_id + '|' + state.session_id + '|' + String(state.seq) + bootHint;
-            boundedRemember(liveStateKeys, liveStateQueue, sequenceKey, MAX_DEDUPE_KEYS);
+            if (!sentinelSession) {
+              const sequenceKey = state.device_id + '|' + state.session_id + '|' + String(state.seq);
+              boundedRemember(liveStateKeys, liveStateQueue, sequenceKey, MAX_DEDUPE_KEYS);
+            }
           } else {
             lastUnsequencedFingerprint = stateFingerprint(state);
             lastUnsequencedAt = event.receivedAt;

@@ -52,6 +52,7 @@
   let historyRefreshTimer = null;
   let historyRecorder = null;
   let historyLiveState = null;
+  let currentPageLiveState = null;
   let historyKnownState = null;
   let historyKnownAvailability = null;
 
@@ -203,7 +204,9 @@
       if (pendingCommand) markPendingUnknown('设备随机会话 ID 不可用；旧命令结果未知。');
       activeSessionId = state.session_id;
       latestState = state;
-      lastLiveStateAt = packet?.retain ? 0 : Date.now();
+      currentPageLiveState = { receivedAt: Date.now() };
+      historyLiveState = currentPageLiveState;
+      lastLiveStateAt = currentPageLiveState.receivedAt;
       render();
       return;
     }
@@ -217,7 +220,9 @@
       scheduleHistoryRefresh();
       activeSessionId = state.session_id;
       latestState = state;
-      lastLiveStateAt = Date.now();
+      currentPageLiveState = { receivedAt: Date.now() };
+      historyLiveState = currentPageLiveState;
+      lastLiveStateAt = currentPageLiveState.receivedAt;
       render();
       return;
     }
@@ -235,7 +240,9 @@
     scheduleHistoryRefresh();
     activeSessionId = state.session_id;
     latestState = state;
-    lastLiveStateAt = Date.now();
+    currentPageLiveState = { receivedAt: Date.now() };
+    historyLiveState = currentPageLiveState;
+    lastLiveStateAt = currentPageLiveState.receivedAt;
     render();
   }
 
@@ -304,7 +311,7 @@
       const [rows, status] = await Promise.all([historyStore.list(), historyStore.getStatus()]);
       historyRows = rows;
       historyPersistent = status.persistent;
-      historyLiveState = newestByReceivedAt(rows,
+      historyLiveState = currentPageLiveState || newestByReceivedAt(rows,
         (row) => row.type === 'state' && row.countsAsLive);
       historyKnownState = newestByReceivedAt(rows,
         (row) => (row.type === 'state' && row.countsAsLive) || row.type === 'state-snapshot');

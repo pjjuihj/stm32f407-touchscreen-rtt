@@ -171,6 +171,19 @@ test('records only live availability transitions and labels retained snapshots s
   ]);
 });
 
+test('a retained conflicting availability snapshot does not hide the next live transition', () => {
+  const { recorder, events } = createRecorder();
+  recorder.observeAvailability('online', { retain: false });
+  recorder.observeAvailability('offline', { retain: true });
+  recorder.observeAvailability('online', { retain: false });
+
+  assert.deepEqual(events.map((event) => [event.data.value, event.retained, event.countsAsLive]), [
+    ['online', false, true],
+    ['offline', true, false],
+    ['online', false, true]
+  ]);
+});
+
 test('records a retained availability value again after a live transition', () => {
   const { recorder, events } = createRecorder();
   recorder.observeAvailability('offline', { retain: true });
@@ -319,4 +332,92 @@ test('records a seq-less state reversal even when the earlier fingerprint is rec
   assert.deepEqual(events.filter((event) => event.type === 'state').map((event) => event.reason), [
     'initial', 'change', 'change'
   ]);
+});
+
+test('starts a new local dedupe epoch when the all-zero session sequence and uptime reset', () => {
+  const { recorder, events, advance } = createRecorder();
+  const sentinel = state({
+    session_id: '0000000000000000',
+    remote_control_available: false,
+    seq: 1,
+    uptime_s: 1
+  });
+
+  recorder.observeState(sentinel, { retain: false });
+  advance(10000);
+  recorder.observeState({ ...sentinel, seq: 7, uptime_s: 11 }, { retain: false });
+  advance(10000);
+  recorder.observeState(sentinel, { retain: false });
+  recorder.observeState(sentinel, { retain: false });
+
+  const states = events.filter((event) => event.type === 'state');
+  assert.equal(states.length, 2);
+  assert.equal(states[0].reason, 'initial');
+  assert.equal(states[1].reason, 'change');
+  assert.equal(Object.hasOwn(states[0], 'dedupeKey'), false);
+  assert.equal(Object.hasOwn(states[1], 'dedupeKey'), false);
+});
+
+test('hydrates sentinel sequence state to recognize a reboot without reusing persistent dedupe keys', async () => {
+  let now = 1000;
+  const stored = [];
+  const store = {
+    list: async () => stored,
+    record: (event) => { stored.push(structuredClone(event)); }
+  };
+  const firstRun = create({ store, now: () => now });
+  await firstRun.ready;
+  firstRun.observeState(state({
+    session_id: '0000000000000000',
+    remote_control_available: false,
+    seq: 7,
+    uptime_s: 70
+  }), { retain: false });
+
+  now += 1000;
+  const afterRestart = create({ store, now: () => now });
+  await afterRestart.ready;
+  afterRestart.observeState(state({
+    session_id: '0000000000000000',
+    remote_control_available: false,
+    seq: 1,
+    uptime_s: 1
+  }), { retain: false });
+
+  assert.equal(stored.filter((event) => event.type === 'state').length, 2);
+  assert.equal(stored.at(-1).reason, 'change');
+  assert.equal(Object.hasOwn(stored.at(-1), 'dedupeKey'), false);
+});
+
+test('does not let a legacy all-zero-session dedupe key hide a changed state with reused seq and uptime', async () => {
+  let now = 1000;
+  const stored = [];
+  const store = {
+    list: async () => stored,
+    record: (event) => { stored.push(structuredClone(event)); }
+  };
+  const firstRun = create({ store, now: () => now });
+  await firstRun.ready;
+  firstRun.observeState(state({
+    session_id: '0000000000000000',
+    remote_control_available: false,
+    seq: 1,
+    uptime_s: 1
+  }), { retain: false });
+  stored[0].dedupeKey = 'state:f407-touchscreen-01:0000000000000000:1:1';
+
+  now += 1000;
+  const afterRestart = create({ store, now: () => now });
+  await afterRestart.ready;
+  afterRestart.observeState(state({
+    session_id: '0000000000000000',
+    remote_control_available: false,
+    seq: 1,
+    uptime_s: 1,
+    wifi: { sta: 'disconnected', ip: null }
+  }), { retain: false });
+
+  assert.equal(stored.filter((event) => event.type === 'state').length, 2);
+  assert.equal(stored.at(-1).reason, 'change');
+  assert.equal(Object.hasOwn(stored.at(-1), 'dedupeKey'), false);
 });
