@@ -259,6 +259,8 @@ const httpServer = createHttpServer(async (request, response) => {
   const files = {
     '/index.html': join(PUBLIC_DIR, 'index.html'),
     '/app.js': join(PUBLIC_DIR, 'app.js'),
+    '/history-store.js': join(PUBLIC_DIR, 'history-store.js'),
+    '/history-recorder.js': join(PUBLIC_DIR, 'history-recorder.js'),
     '/styles.css': join(PUBLIC_DIR, 'styles.css'),
     '/vendor/mqtt.min.js': MQTT_BUNDLE
   };

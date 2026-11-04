@@ -22,7 +22,11 @@
     'buzzer-state', 'controls-state', 'buzzer-duration', 'buzzer-button',
     'get-state-button', 'pending-command', 'pending-title', 'pending-detail',
     'clear-unknown', 'ack-empty', 'latest-ack', 'ack-result', 'ack-command', 'ack-readback',
-    'ack-id', 'ack-time', 'event-count', 'event-list'
+    'ack-id', 'ack-time', 'event-count', 'event-list', 'history-persistence',
+    'history-wifi', 'history-mqtt', 'history-count', 'history-coverage',
+    'history-capacity-dropped', 'history-device-dropped', 'history-last-live',
+    'history-ack-count', 'history-ack-min', 'history-ack-median', 'history-ack-max',
+    'history-list', 'history-empty', 'history-load-more', 'history-export'
   ].map((id) => [id, document.getElementById(id)]));
 
   const ledButtons = [...document.querySelectorAll('[data-command="led.set"]')];
@@ -35,12 +39,36 @@
   let mqttClient = null;
   let subscriptionsReady = false;
   let availability = 'unknown';
+  let availabilityLiveAt = 0;
   let latestState = null;
   let lastLiveStateAt = 0;
   let activeSessionId = null;
   let pendingCommand = null;
   let eventTotal = 0;
   let localCryptoReady = false;
+  let historyRows = [];
+  let historyVisibleCount = 100;
+  let historyPersistent = true;
+  let historyRefreshTimer = null;
+  let historyRecorder = null;
+  let historyLiveState = null;
+  let historyKnownState = null;
+  let historyKnownAvailability = null;
+
+  const historyStore = globalThis.F407HistoryStore.create({
+    onStatus: (status) => {
+      historyPersistent = status.persistent === true;
+      updateHistoryPersistence();
+      if (historyRecorder) historyRecorder.observeStorage(status);
+      scheduleHistoryRefresh();
+    }
+  });
+  historyRecorder = globalThis.F407HistoryRecorder.create({ store: historyStore });
+  void historyStore.ready.then(async () => {
+    await historyRecorder.ready;
+    historyRecorder.observeStorage(await historyStore.getStatus());
+    await refreshHistory();
+  });
 
   function randomHex64() {
     if (!globalThis.crypto || typeof globalThis.crypto.getRandomValues !== 'function') return null;
@@ -75,7 +103,7 @@
   function validState(value) {
     return commonMessage(value) &&
       isSessionId(value.session_id) &&
-      Number.isSafeInteger(value.seq) && value.seq > 0 &&
+      (!Object.hasOwn(value, 'seq') || (Number.isSafeInteger(value.seq) && value.seq > 0)) &&
       Number.isSafeInteger(value.uptime_s) && value.uptime_s >= 0 &&
       isObject(value.wifi) &&
       ['connected', 'disconnected', 'unknown'].includes(value.wifi.sta) &&
@@ -137,6 +165,9 @@
       return;
     }
     availability = value;
+    if (packet?.retain !== true) availabilityLiveAt = Date.now();
+    historyRecorder.observeAvailability(value, { retain: packet?.retain === true });
+    scheduleHistoryRefresh();
     addEvent('设备 MQTT 会话：' + (value === 'online' ? '在线' : '离线') +
       (packet.retain ? '（Broker 保留状态）' : ''));
     render();
@@ -154,6 +185,8 @@
 
     const isRetainedSnapshot = packet.retain === true;
     if (isRetainedSnapshot) {
+      historyRecorder.observeState(state, packet);
+      scheduleHistoryRefresh();
       if (!latestState || lastLiveStateAt === 0) latestState = state;
       addEvent('载入 Broker 保留的最近已知状态。');
       render();
@@ -165,6 +198,8 @@
     // unique boot session, so sequence resets must not make the dashboard stale.
     if (state.session_id === '0000000000000000' &&
         state.remote_control_available === false) {
+      historyRecorder.observeState(state, packet);
+      scheduleHistoryRefresh();
       if (pendingCommand) markPendingUnknown('设备随机会话 ID 不可用；旧命令结果未知。');
       activeSessionId = state.session_id;
       latestState = state;
@@ -175,8 +210,11 @@
 
     const liveConfirmationOfRetainedState = lastLiveStateAt === 0 &&
       latestState?.session_id === state.session_id &&
+      Number.isSafeInteger(latestState.seq) && Number.isSafeInteger(state.seq) &&
       latestState.seq === state.seq;
     if (liveConfirmationOfRetainedState) {
+      historyRecorder.observeState(state, packet);
+      scheduleHistoryRefresh();
       activeSessionId = state.session_id;
       latestState = state;
       lastLiveStateAt = Date.now();
@@ -193,6 +231,8 @@
       return;
     }
 
+    historyRecorder.observeState(state, packet);
+    scheduleHistoryRefresh();
     activeSessionId = state.session_id;
     latestState = state;
     lastLiveStateAt = Date.now();
@@ -235,6 +275,15 @@
     const matched = pendingCommand &&
       acknowledgement.command_id.toLowerCase() === pendingCommand.command.command_id.toLowerCase() &&
       acknowledgement.session_id.toLowerCase() === pendingCommand.command.session_id.toLowerCase();
+    const latencyMs = matched && Number.isFinite(pendingCommand.firstPublishedAt)
+      ? Math.max(0, performance.now() - pendingCommand.firstPublishedAt)
+      : null;
+    historyRecorder.observeAck(acknowledgement, {
+      matched: Boolean(matched),
+      latencyMs,
+      receivedAt: Date.now()
+    });
+    scheduleHistoryRefresh();
     showAcknowledgement(acknowledgement, Boolean(matched));
     if (matched) clearPending();
   }
@@ -243,6 +292,170 @@
     if (topic === TOPICS.availability) return parseAvailability(payload, packet);
     if (topic === TOPICS.state) return handleState(payload, packet);
     if (topic === TOPICS.acknowledgement) return handleAcknowledgement(payload);
+  }
+
+  function scheduleHistoryRefresh() {
+    clearTimeout(historyRefreshTimer);
+    historyRefreshTimer = setTimeout(() => { void refreshHistory(); }, 100);
+  }
+
+  async function refreshHistory() {
+    try {
+      const [rows, status] = await Promise.all([historyStore.list(), historyStore.getStatus()]);
+      historyRows = rows;
+      historyPersistent = status.persistent;
+      historyLiveState = newestByReceivedAt(rows,
+        (row) => row.type === 'state' && row.countsAsLive);
+      historyKnownState = newestByReceivedAt(rows,
+        (row) => (row.type === 'state' && row.countsAsLive) || row.type === 'state-snapshot');
+      historyKnownAvailability = newestByReceivedAt(rows, (row) => row.type === 'availability');
+      updateHistoryPersistence();
+      renderHistorySummary(status);
+      renderHistoryRows();
+    } catch {
+      historyPersistent = false;
+      updateHistoryPersistence();
+    }
+  }
+
+  function newestByReceivedAt(rows, predicate) {
+    let newest = null;
+    for (const row of rows) {
+      if (predicate(row) && (!newest || row.receivedAt > newest.receivedAt)) newest = row;
+    }
+    return newest;
+  }
+
+  function updateHistoryPersistence() {
+    setText(dom['history-persistence'], historyPersistent
+      ? '历史记录保存在此浏览器的本机数据中，最多保留 24 小时或 5,000 条。'
+      : '历史记录未能持久保存。当前只保留本页内存中的有限记录；刷新后可能丢失。');
+    dom['history-persistence'].className = 'history-persistence ' +
+      (historyPersistent ? 'persistent' : 'warning');
+  }
+
+  function formatHistoryDuration(milliseconds) {
+    const minutes = Math.floor(Math.max(0, milliseconds) / 60000);
+    if (minutes < 60) return minutes + ' 分钟';
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (hours < 24) return hours + ' 小时 ' + remainingMinutes + ' 分钟';
+    return Math.floor(hours / 24) + ' 天 ' + (hours % 24) + ' 小时';
+  }
+
+  function availabilitySummary(event) {
+    if (!event) return '尚无 MQTT availability 记录';
+    const isFresh = availabilityLiveAt > 0 && Date.now() - availabilityLiveAt <= HEARTBEAT_STALE_MS;
+    const value = isFresh ? availability : event.data?.value;
+    const label = value === 'online' ? '在线' : value === 'offline' ? '离线' : '未知';
+    return (isFresh ? '实时 · ' : '最近已知 · ') + label;
+  }
+
+  function renderHistorySummary(status) {
+    const stateEvent = historyKnownState;
+    if (!stateEvent) {
+      setText(dom['history-wifi'], '尚无 Wi‑Fi/IP 记录');
+      setText(dom['history-device-dropped'], '尚无设备丢弃计数');
+    } else {
+      const data = stateEvent.data || {};
+      const currentIsFresh = appIsFresh() && latestState !== null;
+      const currentStateData = currentIsFresh ? latestState : data;
+      const wifi = currentStateData.wifi || {};
+      const source = currentIsFresh ? '实时 · ' : '最近已知 · ';
+      setText(dom['history-wifi'], source + 'STA ' + (wifi.sta || '未知') +
+        ' · IP ' + (wifi.ip || '未分配'));
+      setText(dom['history-device-dropped'], Number.isSafeInteger(currentStateData.dropped_snapshots)
+        ? currentStateData.dropped_snapshots
+        : '未知');
+    }
+
+    setText(dom['history-mqtt'], availabilitySummary(historyKnownAvailability));
+    setText(dom['history-count'], status.count + ' 条');
+    setText(dom['history-coverage'], status.oldestAt === null
+      ? '暂无记录'
+      : new Date(status.oldestAt).toLocaleString() + ' · ' + formatHistoryDuration(status.coverageMs));
+    setText(dom['history-capacity-dropped'], status.capacityDropped);
+    setText(dom['history-last-live'], historyLiveState
+      ? new Date(historyLiveState.receivedAt).toLocaleString() +
+        ' · ' + Math.max(0, Math.floor((Date.now() - historyLiveState.receivedAt) / 1000)) + ' 秒前'
+      : '尚无实时状态');
+
+    const latencies = historyRows
+      .filter((row) => row.type === 'ack' && typeof row.data?.latency_ms === 'number')
+      .map((row) => row.data.latency_ms)
+      .sort((left, right) => left - right);
+    setText(dom['history-ack-count'], latencies.length);
+    if (!latencies.length) {
+      for (const id of ['history-ack-min', 'history-ack-median', 'history-ack-max']) setText(dom[id], '未知');
+    } else {
+      const middle = Math.floor(latencies.length / 2);
+      const median = latencies.length % 2
+        ? latencies[middle]
+        : (latencies[middle - 1] + latencies[middle]) / 2;
+      setText(dom['history-ack-min'], latencies[0].toFixed(1) + ' ms');
+      setText(dom['history-ack-median'], median.toFixed(1) + ' ms');
+      setText(dom['history-ack-max'], latencies[latencies.length - 1].toFixed(1) + ' ms');
+    }
+  }
+
+  function describeHistoryEvent(event) {
+    const data = event.data || {};
+    if (event.type === 'state-snapshot') return 'Broker 保留的最近已知状态快照';
+    if (event.type === 'state') {
+      const wifi = data.wifi || {};
+      const led = Array.isArray(data.led) ? data.led.map((value) => value ? '开' : '关').join('/') : '未知';
+      const reason = event.reason === 'sample' ? '每分钟采样' :
+        event.reason === 'initial' ? '本会话首条状态' :
+          event.reason === 'change+sample' ? '状态变化与定时采样' : '状态变化';
+      const dropped = data.droppedDelta ? ' · 本次新增丢弃 ' + data.droppedDelta : '';
+      return reason + ' · Wi‑Fi ' + (wifi.sta || '未知') +
+        ' / IP ' + (wifi.ip || '未分配') + ' · LED ' + led + dropped;
+    }
+    if (event.type === 'availability') {
+      return (event.retained ? '最近已知 MQTT availability · ' : 'MQTT availability · ') +
+        (data.value === 'online' ? '在线' : data.value === 'offline' ? '离线' : '未知');
+    }
+    if (event.type === 'ack') {
+      return 'ACK · ' + (data.command || '命令') + ' · ' + (data.result || '未知') +
+        (typeof data.latency_ms === 'number' ? ' · ' + data.latency_ms.toFixed(1) + ' ms' : ' · 未匹配');
+    }
+    return '本地历史改为仅内存保存';
+  }
+
+  function renderHistoryRows() {
+    const rows = [...historyRows].reverse().slice(0, historyVisibleCount);
+    dom['history-list'].replaceChildren();
+    for (const event of rows) {
+      const row = document.createElement('li');
+      const time = document.createElement('time');
+      const body = document.createElement('span');
+      time.dateTime = new Date(event.receivedAt).toISOString();
+      time.textContent = new Date(event.receivedAt).toLocaleString();
+      body.textContent = describeHistoryEvent(event);
+      row.append(time, body);
+      dom['history-list'].append(row);
+    }
+    dom['history-empty'].hidden = historyRows.length > 0;
+    dom['history-load-more'].hidden = historyRows.length <= historyVisibleCount;
+    dom['history-load-more'].disabled = historyRows.length <= historyVisibleCount;
+  }
+
+  function exportHistoryCsv() {
+    void historyStore.list().then((rows) => {
+      const blob = new Blob([globalThis.F407HistoryStore.toCsv(rows)], {
+        type: 'text/csv;charset=utf-8'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'f407-reliability-history.csv';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }).catch(() => {
+      addEvent('CSV 导出未完成；历史仍可在本页查看。');
+    });
   }
 
   function appIsFresh() {
@@ -256,6 +469,7 @@
       appIsFresh() &&
       latestState?.remote_control_available === true &&
       isSessionId(latestState?.session_id) &&
+      Number.isSafeInteger(latestState?.seq) && latestState.seq > 0 &&
       !pendingCommand);
   }
 
@@ -266,10 +480,12 @@
       setText(dom['wifi-ip'], latestState.wifi.ip || '尚无可用 IP');
       setText(dom['bluetooth-state'], latestState.bt_connected ? '已连接' : '未连接');
       setText(dom['session-id'], latestState.session_id);
-      setText(dom['state-sequence'], latestState.seq);
+      setText(dom['state-sequence'], Number.isSafeInteger(latestState.seq) ? latestState.seq : '未知');
       setText(dom['uptime'], formatUptime(latestState.uptime_s));
       setText(dom['dropped-count'], latestState.dropped_snapshots);
-      setText(dom['remote-state'], latestState.remote_control_available ? '可用' : '关闭');
+      setText(dom['remote-state'], latestState.remote_control_available
+        ? Number.isSafeInteger(latestState.seq) && latestState.seq > 0 ? '可用' : '缺少序号，已禁用'
+        : '关闭');
       latestState.led.forEach((enabled, index) => {
         const led = dom['led-' + index];
         setText(led, enabled ? 'GPIO 高' : 'GPIO 低');
@@ -306,6 +522,25 @@
         : '等待实时状态、链路或安全会话');
 
     renderPending();
+    renderHistoryFreshness();
+  }
+
+  function renderHistoryFreshness() {
+    if (historyKnownState) {
+      const data = historyKnownState.data || {};
+      const fresh = appIsFresh() && latestState !== null;
+      const currentStateData = fresh ? latestState : data;
+      const wifi = currentStateData.wifi || {};
+      setText(dom['history-wifi'], (fresh ? '实时 · ' : '最近已知 · ') +
+        'STA ' + (wifi.sta || '未知') + ' · IP ' + (wifi.ip || '未分配'));
+    }
+    if (historyKnownAvailability) {
+      setText(dom['history-mqtt'], availabilitySummary(historyKnownAvailability));
+    }
+    setText(dom['history-last-live'], historyLiveState
+      ? new Date(historyLiveState.receivedAt).toLocaleString() +
+        ' · ' + Math.max(0, Math.floor((Date.now() - historyLiveState.receivedAt) / 1000)) + ' 秒前'
+      : '尚无实时状态');
   }
 
   function labelWifi(value, fresh) {
@@ -363,7 +598,7 @@
     }
     const command = makeCommand(commandName, extra);
     if (!command) return;
-    pendingCommand = { command, sends: 0, timer: null, unknown: false };
+    pendingCommand = { command, sends: 0, timer: null, unknown: false, firstPublishedAt: null };
     publishPendingCommand();
   }
 
@@ -374,6 +609,7 @@
     }
     const current = pendingCommand;
     current.sends += 1;
+    if (current.firstPublishedAt === null) current.firstPublishedAt = performance.now();
     mqttClient.publish(TOPICS.command, JSON.stringify(current.command), {
       qos: 1,
       retain: false
@@ -531,6 +767,11 @@
         clearPending();
       }
     });
+    dom['history-load-more'].addEventListener('click', () => {
+      historyVisibleCount = Math.min(historyRows.length, historyVisibleCount + 100);
+      renderHistoryRows();
+    });
+    dom['history-export'].addEventListener('click', exportHistoryCsv);
   }
 
   localCryptoReady = randomHex64() !== null;
