@@ -9,6 +9,7 @@
   <script defer src="/vendor/mqtt.min.js"></script>
   <script defer src="/history-store.js"></script>
   <script defer src="/history-recorder.js"></script>
+  <script defer src="/reliability-report.js"></script>
   <script defer src="/app.js"></script>
 </head>
 <body>
@@ -208,6 +209,51 @@
         <span>中位数 <b id="history-ack-median">未知</b></span>
         <span>最大 <b id="history-ack-max">未知</b></span>
       </div>
+
+      <section class="reliability-report" aria-labelledby="reliability-heading">
+        <div class="panel-heading reliability-heading">
+          <h3 id="reliability-heading">可靠性报告</h3>
+          <label class="reliability-range" for="reliability-range">统计范围
+            <select id="reliability-range">
+              <option value="3600000">1 hour</option>
+              <option value="21600000">6 hours</option>
+              <option value="86400000" selected>24 hours</option>
+            </select>
+          </label>
+        </div>
+        <p class="fine-print">仅统计本机已保存的实时记录；在线率以已知时长为分母。缺失区间记为未知，未结束或跨缺失区间的离线不计入完整离线时长。</p>
+        <div class="reliability-grid" aria-live="polite" aria-atomic="true">
+          <section class="reliability-card" aria-label="Wi‑Fi / IP可靠性">
+            <h4>Wi‑Fi / IP</h4>
+            <dl>
+              <div><dt>覆盖率 / 已知时长</dt><dd id="wifi-report-coverage">样本不足</dd></div>
+              <div><dt>已知时长在线率</dt><dd id="wifi-report-online">样本不足</dd></div>
+              <div><dt>离线次数</dt><dd id="wifi-report-offline-count">样本不足</dd></div>
+              <div><dt>完整离线时长 / 次数</dt><dd id="wifi-report-completed-outage">样本不足</dd></div>
+              <div><dt>未知时长</dt><dd id="wifi-report-unknown">样本不足</dd></div>
+            </dl>
+          </section>
+          <section class="reliability-card" aria-label="设备 MQTT 会话可靠性">
+            <h4>设备 MQTT 会话</h4>
+            <dl>
+              <div><dt>覆盖率 / 已知时长</dt><dd id="mqtt-report-coverage">样本不足</dd></div>
+              <div><dt>已知时长在线率</dt><dd id="mqtt-report-online">样本不足</dd></div>
+              <div><dt>离线次数</dt><dd id="mqtt-report-offline-count">样本不足</dd></div>
+              <div><dt>完整离线时长 / 次数</dt><dd id="mqtt-report-completed-outage">样本不足</dd></div>
+              <div><dt>未知时长</dt><dd id="mqtt-report-unknown">样本不足</dd></div>
+            </dl>
+          </section>
+          <section class="reliability-card" aria-label="ACK 统计">
+            <h4>命令 ACK</h4>
+            <dl>
+              <div><dt>收到回执</dt><dd id="ack-report-count">0</dd></div>
+              <div><dt>结果计数</dt><dd id="ack-report-results">样本不足</dd></div>
+              <div><dt>匹配延迟样本</dt><dd id="ack-report-latency-count">0</dd></div>
+              <div><dt>匹配延迟 P95</dt><dd id="ack-report-p95">样本不足</dd></div>
+            </dl>
+          </section>
+        </div>
+      </section>
 
       <div class="history-list-heading">
         <div><h3>事件时间线</h3><p>最新记录在前；保留状态快照会标为“最近已知”。</p></div>

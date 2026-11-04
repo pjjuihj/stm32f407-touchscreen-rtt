@@ -26,7 +26,12 @@
     'history-wifi', 'history-mqtt', 'history-count', 'history-coverage',
     'history-capacity-dropped', 'history-device-dropped', 'history-last-live',
     'history-ack-count', 'history-ack-min', 'history-ack-median', 'history-ack-max',
-    'history-list', 'history-empty', 'history-load-more', 'history-export'
+    'history-list', 'history-empty', 'history-load-more', 'history-export',
+    'reliability-range', 'wifi-report-coverage', 'wifi-report-online',
+    'wifi-report-offline-count', 'wifi-report-completed-outage', 'wifi-report-unknown',
+    'mqtt-report-coverage', 'mqtt-report-online', 'mqtt-report-offline-count',
+    'mqtt-report-completed-outage', 'mqtt-report-unknown', 'ack-report-count',
+    'ack-report-results', 'ack-report-latency-count', 'ack-report-p95'
   ].map((id) => [id, document.getElementById(id)]));
 
   const ledButtons = [...document.querySelectorAll('[data-command="led.set"]')];
@@ -322,6 +327,8 @@
     } catch {
       historyPersistent = false;
       updateHistoryPersistence();
+    } finally {
+      renderReliabilityReport();
     }
   }
 
@@ -403,6 +410,32 @@
       setText(dom['history-ack-median'], median.toFixed(1) + ' ms');
       setText(dom['history-ack-max'], latencies[latencies.length - 1].toFixed(1) + ' ms');
     }
+  }
+
+  function renderReliabilityReport() {
+    const selectedWindow = Number(dom['reliability-range'].value);
+    const windowMs = [3600000, 21600000, 86400000].includes(selectedWindow)
+      ? selectedWindow : 86400000;
+    const report = globalThis.F407ReliabilityReport.summarize(historyRows, { now: Date.now(), windowMs });
+    const duration = (ms) => (ms / 1000).toFixed(1) + ' 秒';
+    for (const channel of ['wifi', 'mqtt']) {
+      const summary = report[channel];
+      setText(dom[channel + '-report-coverage'], summary.coveragePercent.toFixed(1) +
+        '% / ' + duration(summary.knownMs));
+      setText(dom[channel + '-report-online'], summary.knownMs > 0
+        ? summary.onlinePercent.toFixed(1) + '%' : '样本不足');
+      setText(dom[channel + '-report-offline-count'], summary.outageCount);
+      setText(dom[channel + '-report-completed-outage'], summary.knownMs > 0
+        ? duration(summary.completedOutageMs) + ' / ' + summary.completedOutageCount + ' 次'
+        : '样本不足');
+      setText(dom[channel + '-report-unknown'], duration(summary.unknownMs));
+    }
+    setText(dom['ack-report-count'], report.ack.receivedCount);
+    setText(dom['ack-report-results'], Object.entries(report.ack.resultCounts)
+      .map(([result, count]) => result + ': ' + count).join(' · '));
+    setText(dom['ack-report-latency-count'], report.ack.matchedLatencyCount);
+    setText(dom['ack-report-p95'], report.ack.matchedLatencyCount > 0
+      ? report.ack.latencyP95Ms.toFixed(1) + ' ms' : '样本不足');
   }
 
   function describeHistoryEvent(event) {
@@ -779,12 +812,15 @@
       renderHistoryRows();
     });
     dom['history-export'].addEventListener('click', exportHistoryCsv);
+    dom['reliability-range'].addEventListener('change', renderReliabilityReport);
   }
 
   localCryptoReady = randomHex64() !== null;
   if (!localCryptoReady) addEvent('浏览器不支持安全随机数；远程控制不可用。');
   attachControls();
   render();
+  renderReliabilityReport();
   connectDashboard();
+  setInterval(renderReliabilityReport, 60000);
   setInterval(render, 1000);
 })();

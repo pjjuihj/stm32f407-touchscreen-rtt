@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
+const reliabilitySource = await readFile(new URL('../public/reliability-report.js', import.meta.url), 'utf8');
+
 const appSource = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
 
 function makeElement() {
@@ -74,6 +76,7 @@ async function startDashboard({ clock = Date.now() } = {}) {
     mqtt: { connect: () => mqttClient }
   };
   context.globalThis = context;
+  vm.runInNewContext(reliabilitySource, context, { filename: 'reliability-report.js' });
   vm.runInNewContext(appSource, context, { filename: 'app.js' });
   mqttClient.connected = true;
   clientHandlers.connect();

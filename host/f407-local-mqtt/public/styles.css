@@ -29,7 +29,7 @@ body {
     var(--bg);
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { color: inherit; }
 
 .shell { width: min(1260px, calc(100% - 48px)); margin: 0 auto; }
@@ -235,13 +235,28 @@ footer { padding: 22px 0 28px; color: var(--dim); font: 10px "DM Mono", Consolas
 .history-load-row { display: flex; justify-content: center; padding-top: 12px; }
 .history-load-row button[hidden] { display: none; }
 
+.reliability-report { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.reliability-heading { margin-bottom: 10px; flex-wrap: wrap; }
+.reliability-heading h3 { margin: 0; font-size: 13px; }
+.reliability-range { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.reliability-range select { min-height: 34px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--panel); }
+.reliability-range select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.reliability-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
+.reliability-card { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: rgba(10, 15, 20, .35); }
+.reliability-card h4 { margin: 0 0 12px; color: var(--green); font-size: 12px; }
+.reliability-card dl { display: grid; gap: 10px; margin: 0; }
+.reliability-card dt { color: var(--muted); font-size: 10px; }
+.reliability-card dd { margin: 4px 0 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+
 @media (max-width: 900px) {
+  .reliability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .content-grid { grid-template-columns: 1fr; }
   .side-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .event-panel { grid-column: 1 / -1; grid-row: 2; }
   .history-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 650px) {
+  .reliability-grid { grid-template-columns: 1fr; }
   .shell { width: min(100% - 28px, 560px); }
   .topbar { align-items: flex-start; flex-direction: column; }
   .status-grid { grid-template-columns: 1fr; }
