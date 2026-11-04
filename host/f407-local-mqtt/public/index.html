@@ -7,6 +7,8 @@
   <title>F407 本地 IoT 控制台</title>
   <link rel="stylesheet" href="/styles.css">
   <script defer src="/vendor/mqtt.min.js"></script>
+  <script defer src="/history-store.js"></script>
+  <script defer src="/history-recorder.js"></script>
   <script defer src="/app.js"></script>
 </head>
 <body>
@@ -173,6 +175,48 @@
           </ul>
         </article>
       </aside>
+    </section>
+
+    <section class="panel history-panel" aria-labelledby="history-heading">
+      <div class="panel-heading history-heading">
+        <div>
+          <p class="eyebrow">LOCAL RELIABILITY HISTORY</p>
+          <h2 id="history-heading">本地可靠性历史</h2>
+        </div>
+        <div class="history-actions">
+          <button type="button" id="history-export">导出 CSV</button>
+        </div>
+      </div>
+      <p class="history-persistence persistent" id="history-persistence" role="status" aria-live="polite">
+        正在检查本机历史存储…
+      </p>
+
+      <div class="history-summary-grid" aria-label="历史状态摘要">
+        <div class="history-summary-card"><span>Wi‑Fi / IP</span><strong id="history-wifi">尚无记录</strong></div>
+        <div class="history-summary-card"><span>MQTT availability</span><strong id="history-mqtt">尚无记录</strong></div>
+        <div class="history-summary-card"><span>保留记录</span><strong id="history-count">0 条</strong></div>
+        <div class="history-summary-card"><span>实际覆盖</span><strong id="history-coverage">暂无记录</strong></div>
+        <div class="history-summary-card"><span>容量淘汰</span><strong id="history-capacity-dropped">0</strong></div>
+        <div class="history-summary-card"><span>设备丢弃快照</span><strong id="history-device-dropped">尚无记录</strong></div>
+        <div class="history-summary-card"><span>最近实时状态</span><strong id="history-last-live">尚无实时状态</strong></div>
+      </div>
+
+      <div class="history-ack-summary" aria-label="匹配命令 ACK 延迟统计">
+        <strong>匹配 ACK 延迟</strong>
+        <span>数量 <b id="history-ack-count">0</b></span>
+        <span>最小 <b id="history-ack-min">未知</b></span>
+        <span>中位数 <b id="history-ack-median">未知</b></span>
+        <span>最大 <b id="history-ack-max">未知</b></span>
+      </div>
+
+      <div class="history-list-heading">
+        <div><h3>事件时间线</h3><p>最新记录在前；保留状态快照会标为“最近已知”。</p></div>
+      </div>
+      <p class="history-empty" id="history-empty">收到设备状态或 MQTT 回执后，历史会显示在这里。</p>
+      <ol class="history-list" id="history-list" aria-live="polite"></ol>
+      <div class="history-load-row">
+        <button type="button" id="history-load-more" hidden>加载更早记录</button>
+      </div>
     </section>
 
     <footer>本机页面：127.0.0.1 · Broker 只绑定配置的热点私有地址 · 命令不保留、不离线排队</footer>

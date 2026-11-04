@@ -27,6 +27,12 @@ F407_DASHBOARD_PORT and F407_MQTT_PORT can override the local web and broker por
 
 No firewall rule is created. If the existing host policy prevents a board from reaching the broker, the app reports the connection as unverified; configure network policy separately only when explicitly authorized.
 
+## Local reliability history
+
+The browser dashboard stores a selected history of Wi-Fi/IP state, MQTT availability, device state changes and samples, and command ACK results in IndexedDB on this computer. It is local to this browser profile and dashboard origin; it is not uploaded or shared with the Broker. The page keeps at most 24 hours or 5,000 events, whichever limit is reached first, and shows the actual time coverage plus any rows removed by the count limit. Retained Broker messages are labeled as recent-known snapshots rather than live transitions.
+
+Use **导出 CSV** in the history panel to download the currently retained rows. The CSV contains the same selected status and ACK fields shown by the dashboard; credentials, raw MQTT payloads, serial data, and error stacks are not stored. Clearing this site's browser data removes the history. If IndexedDB is unavailable or a write fails, the dashboard continues running with a bounded in-memory history for the current page and displays **历史记录未能持久保存**; that temporary history can disappear on refresh.
+
 The firmware uses CMake. Its default `IOT_MQTT_ENABLE=ON` includes the F407 MQTT client and disables the older automatic TCP diagnostic. Setting `IOT_MQTT_AT_CAPABILITY_DIAGNOSTIC_ENABLE=ON` excludes the MQTT client source so the diagnostic and production client do not compete for the ESP command channel. The F407 broker address and port are compile-time settings `IOT_MQTT_BROKER_HOST` and `IOT_MQTT_BROKER_PORT`; if the broker bind address is changed in PowerShell, configure with the same address, for example:
 
     cmake -S . -B .ai/tmp/f407-mqtt-build -DIOT_MQTT_ENABLE=ON -DIOT_MQTT_BROKER_HOST=192.168.137.1 -DIOT_MQTT_BROKER_PORT=1883
