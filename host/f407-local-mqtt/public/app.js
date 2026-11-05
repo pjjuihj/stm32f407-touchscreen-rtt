@@ -424,7 +424,8 @@
         '% / ' + duration(summary.knownMs));
       setText(dom[channel + '-report-online'], summary.knownMs > 0
         ? summary.onlinePercent.toFixed(1) + '%' : '样本不足');
-      setText(dom[channel + '-report-offline-count'], summary.outageCount);
+      setText(dom[channel + '-report-offline-count'], summary.knownMs > 0
+        ? summary.outageCount : '样本不足');
       setText(dom[channel + '-report-completed-outage'], summary.knownMs > 0
         ? duration(summary.completedOutageMs) + ' / ' + summary.completedOutageCount + ' 次'
         : '样本不足');
