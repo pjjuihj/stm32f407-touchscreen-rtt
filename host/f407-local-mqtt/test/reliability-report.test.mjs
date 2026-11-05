@@ -104,11 +104,11 @@ test('ACK counts all six results and nearest-rank numeric P95 in window only', (
   assert.equal(summarize([], options).ack.latencyP95Ms, null);
 });
 
-test('sorts a copy, supports custom gaps, and validates options', () => {
+test('sorts a copy, pins the gap policy, and validates options', () => {
   const rows = [online(120_000), offline(60_000), online(0)];
   const original = structuredClone(rows);
   assert.equal(summarize(rows, options).wifi.completedOutageCount, 1);
   assert.deepEqual(rows, original);
-  assert.equal(summarize(rows, { ...options, maxGapMs: 30_000 }).wifi.knownMs, 0);
+  assert.equal(summarize(rows, { ...options, maxGapMs: 30_000 }).wifi.knownMs, 120_000);
   for (const windowMs of [0, -1, NaN, 1.5]) assert.throws(() => summarize([], { windowMs }), RangeError);
 });
