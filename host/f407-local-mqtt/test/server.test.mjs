@@ -138,8 +138,9 @@ test('local dashboard and MQTT broker interoperate with a simulated device', asy
     assert.match(page.headers.get('content-security-policy'), new RegExp(`ws://127\\.0\\.0\\.1:${dashboardPort}`));
     const storeScript = pageText.indexOf('<script defer src="/history-store.js"></script>');
     const recorderScript = pageText.indexOf('<script defer src="/history-recorder.js"></script>');
+    const reportScript = pageText.indexOf('<script defer src="/reliability-report.js"></script>');
     const appScript = pageText.indexOf('<script defer src="/app.js"></script>');
-    assert.ok(storeScript >= 0 && storeScript < recorderScript && recorderScript < appScript);
+    assert.ok(storeScript >= 0 && storeScript < recorderScript && recorderScript < reportScript && reportScript < appScript);
     assert.match(pageText, /id="history-heading"/);
     assert.match(pageText, /id="history-list"/);
 
@@ -148,6 +149,18 @@ test('local dashboard and MQTT broker interoperate with a simulated device', asy
       assert.equal(response.status, 200);
       assert.match(response.headers.get('content-type'), /javascript/);
       assert.ok((await response.text()).includes('F407History'));
+    }
+
+    const reportAsset = await fetch(`${dashboardUrl}reliability-report.js`);
+    assert.equal(reportAsset.status, 200);
+    assert.match(reportAsset.headers.get('content-type'), /javascript/);
+    assert.match(await reportAsset.text(), /F407ReliabilityReport/);
+    assert.match(pageText, /<select id="reliability-range">/);
+    for (const [value, label] of [['3600000', '1 hour'], ['21600000', '6 hours'], ['86400000', '24 hours']]) {
+      assert.ok(pageText.includes(`<option value="${value}"${value === '86400000' ? ' selected' : ''}>${label}</option>`));
+    }
+    for (const id of ['wifi-report-coverage', 'wifi-report-online', 'wifi-report-offline-count', 'wifi-report-completed-outage', 'wifi-report-unknown', 'mqtt-report-coverage', 'mqtt-report-online', 'mqtt-report-offline-count', 'mqtt-report-completed-outage', 'mqtt-report-unknown', 'ack-report-count', 'ack-report-results', 'ack-report-latency-count', 'ack-report-p95']) {
+      assert.ok(pageText.includes(`id="${id}"`), `Missing report region: ${id}`);
     }
 
     const bundle = await fetch(`${dashboardUrl}vendor/mqtt.min.js`);

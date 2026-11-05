@@ -93,3 +93,15 @@ Acknowledgement:
 The dashboard does not interpret an unsupported schema as a legacy version. It sends one command at a time, retries the same command ID at most twice after the initial send, and then holds an explicit unknown-result lock until the user clears it. When the browser loses its broker connection or the F407 heartbeat becomes stale, it stops retries rather than queueing commands offline.
 
 This demo deliberately has no MQTT username/password. Use it only on the owner's trusted hotspot with known devices. The broker rejects public/wildcard bind addresses but does not authenticate clients on that private network.
+
+## Reliability report metrics
+
+The report selects the trailing **1h/6h/24h** window using this browser's receive timestamps. Changing the range only recalculates local history: it sends no MQTT command and does not change IndexedDB retention (**24 hours/5,000 events**, whichever limit is reached first).
+
+Wi-Fi/IP is online only when STA is connected and has a valid IPv4 address; a disconnected STA or connected STA without a valid IPv4 address is offline. MQTT is tracked independently using live state receipts (online) and live availability messages. These are browser observations, not proof of continuous physical connectivity.
+
+Only adjacent live observations inside the selected window define known time. The **120-second observation gap** is inclusive: gaps up to 120 seconds count under the earlier state, while longer gaps and intervals with unknown endpoints are entirely unknown. Time before the first observation and after the last is unknown too; observations outside the window do not extend coverage. Coverage is known time divided by the whole window; online percentage is online time divided by known time. With no known time the report shows insufficient samples rather than zero-percent uptime. Retained snapshots remain visible in history but never contribute live time, outage transitions, or ACK statistics.
+
+An outage count records an observed online-to-offline transition, even if the interval between those observations is unknown. Outage duration includes only complete online-to-offline-to-online episodes observed within the window without an unknown interval. Left-clipped, still-open, and gap-interrupted episodes contribute no duration; the panel displays total completed-outage time and completed episode count.
+
+ACK totals and per-result counts include live ACK rows in the window. Latency samples require the existing pending-command match on both session ID and command ID, and use elapsed milliseconds from the first publish, including retry time. Unmatched ACKs can count as results but have no latency. P95 sorts finite nonnegative matched latencies and selects nearest rank `ceil(0.95 * sample count)` (one-based), without interpolation. No matched samples displays insufficient samples. This is ACK response latency, not a physical-output acceptance measurement.
