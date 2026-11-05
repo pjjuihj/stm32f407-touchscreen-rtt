@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const MAX_OBSERVATION_GAP_MS = 120_000;
   const RESULTS = ['OK', 'INVALID', 'INVALID_PARAM', 'RATE_LIMITED', 'ERROR', 'STALE_SESSION'];
 
   function isIPv4(value) {
@@ -15,7 +16,7 @@
     return 'unknown';
   }
 
-  function summarizeChannel(points, fromAt, toAt, maxGapMs) {
+  function summarizeChannel(points, fromAt, toAt) {
     const durationMs = { online: 0, offline: 0 };
     let unknownMs = points.length ? points[0].receivedAt - fromAt +
       toAt - points[points.length - 1].receivedAt : toAt - fromAt;
@@ -30,7 +31,7 @@
       const gapMs = next.receivedAt - previous.receivedAt;
       const startsOutage = previous.status === 'online' && next.status === 'offline';
       if (startsOutage) outageCount += 1;
-      if (gapMs > maxGapMs || previous.status === 'unknown' || next.status === 'unknown') {
+      if (gapMs > MAX_OBSERVATION_GAP_MS || previous.status === 'unknown' || next.status === 'unknown') {
         unknownMs += gapMs;
         outageMs = null;
         continue;
@@ -57,10 +58,9 @@
     };
   }
 
-  function summarize(events, { now = Date.now(), windowMs, maxGapMs = 120_000 } = {}) {
+  function summarize(events, { now = Date.now(), windowMs } = {}) {
     if (!Number.isSafeInteger(windowMs) || windowMs <= 0) throw new RangeError('windowMs must be a positive safe integer');
     if (!Number.isSafeInteger(now) || !Number.isSafeInteger(now - windowMs)) throw new RangeError('Invalid time window');
-    if (!Number.isSafeInteger(maxGapMs) || maxGapMs < 0) throw new RangeError('maxGapMs must be a nonnegative safe integer');
     const fromAt = now - windowMs;
     const rows = events.filter((row) => row.countsAsLive === true && row.retained !== true &&
       Number.isSafeInteger(row.receivedAt) && row.receivedAt >= fromAt && row.receivedAt <= now)
@@ -89,8 +89,8 @@
     ack.matchedLatencyCount = latencies.length;
     if (latencies.length) ack.latencyP95Ms = latencies[Math.ceil(0.95 * latencies.length) - 1];
     return { fromAt, toAt: now,
-      wifi: summarizeChannel(wifi, fromAt, now, maxGapMs),
-      mqtt: summarizeChannel(mqtt, fromAt, now, maxGapMs), ack };
+      wifi: summarizeChannel(wifi, fromAt, now),
+      mqtt: summarizeChannel(mqtt, fromAt, now), ack };
   }
 
   globalThis.F407ReliabilityReport = { summarize };
